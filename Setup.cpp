@@ -34,12 +34,12 @@ int Setup::getNumProjections()
 {
     if (!(ui->lineEdit_NumProj->text().isEmpty()))
     {
-        return (ui->lineEdit_NumProj->text().isEmpty());
+        return (ui->lineEdit_NumProj->text().toInt());
 
     } else {
 
         QMessageBox::warning(this, "ERROR", "Please insert the number of projections");
-        return 1;
+        return (1);
     }
 }
 
@@ -50,7 +50,7 @@ double Setup::getTomoAngleDeg()
 
 void Setup::getDistances()
 {
-    if (!(ui->lineEdit_SOD->text().isEmpty()) && ((ui->lineEdit_SOD->text().toDouble()) > 0.0)){
+    if (!(ui->lineEdit_SOD->text().isEmpty()) && ((ui->lineEdit_SOD->text().toDouble()) > 0)){
 
         m_SOD = (ui->lineEdit_SOD->text().toDouble());
 

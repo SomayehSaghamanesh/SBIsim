@@ -3,6 +3,7 @@
 #include "Materials.h"
 
 #include <QMessageBox>
+#include <QDir>
 #include <QFileDialog>
 #include <QFile>
 #include <QVector>
@@ -82,48 +83,52 @@ void SourceAndDetector::getXrayEnergy(std::vector<double>& energyVector, std::ve
 
     } else if (m_polychrome){
 
-        if (!(ui->lineEdit_energySpectrum->text().isEmpty())){
+        // QString energySpectrumFilter = "*.txt, *.dat";
+        // QString energySpectrum_filename = QFileDialog::getOpenFileName(this, "Open a file", QDir::homePath(), energySpectrumFilter);
+        // ui->lineEdit_energySpectrum->clear();
+        // ui->lineEdit_energySpectrum->setText(energySpectrum_filename);
 
-            QString energySpectrum_filename = ui->lineEdit_energySpectrum->text();
-            QFile spectrumFile(energySpectrum_filename);
-            if (!spectrumFile.open(QFile::ReadOnly | QFile::Text)){// check exist instead of open
-                QMessageBox::warning(this, "ERROR", "Energy spectrum pectrum file can NOT open");
-                return;
-            }
-
-            QString line;
-            double energy;
-            double weight;
-            QTextStream spectrumFile_in(&spectrumFile);
-            while (spectrumFile_in.readLineInto(&line, 0)){
-                QStringList parts = line.split(' ', Qt::SkipEmptyParts);
-                if (parts.size() == 2) {
-                    energy = parts[0].toDouble();
-                    weight = parts[1].toDouble();
-                    energyVector.push_back(energy);
-                    spectrumVector.push_back(weight);
-                    qDebug() << "energy : " << energy << "\tweight : " << weight;
-                } else {
-                    QMessageBox::warning(this, "ERROR", "Invalid file format.");
-                    return;
-                }
-            }
-            spectrumFile.close();
-        } else {
-            QMessageBox::warning(this, "ERROR", "Please select a valid energy spectrum file.");
+        QString energySpectrum_filename = ui->lineEdit_energySpectrum->text();
+        QFile spectrumFile(energySpectrum_filename);
+        if (!spectrumFile.open(QFile::ReadOnly | QFile::Text)){// check exist instead of open
+            QMessageBox::warning(this, "ERROR", "Energy spectrum file can NOT open.");
             return;
         }
+
+        QString line;
+        double energy;
+        double weight;
+        QTextStream spectrumFile_in(&spectrumFile);
+        while (spectrumFile_in.readLineInto(&line, 0)){
+            QStringList parts = line.split(' ', Qt::SkipEmptyParts);
+            if (parts.size() == 2) {
+                energy = parts[0].toDouble();
+                weight = parts[1].toDouble();
+                energyVector.push_back(energy);
+                spectrumVector.push_back(weight);
+                qDebug() << "energy : " << energy << "\tweight : " << weight;
+            } else {
+                QMessageBox::warning(this, "ERROR", "Invalid file format.");
+                return;
+            }
+        }
+        spectrumFile.close();
+
+        // } else {
+        //     QMessageBox::warning(this, "ERROR", "Please select a valid energy spectrum file.");
+        //     return;
+        // }
     } else {
-        QMessageBox::warning(this, "ERROR", "Nieghter monochromatic nor polychromatic X-ray has been selected!");
+        QMessageBox::warning(this, "ERROR", "Nieghter monochromatic nor polychromatic X-ray has been selected. Aborting ...");
         return;
     }
 }
 
 void SourceAndDetector::on_pushButton_energySpectrum_clicked()
 {
-    QString filter = "Data Files (*.txt, *.dat)";
-    QString energySpectrum_filename = QFileDialog::getOpenFileName(this, "Select a file", QDir::homePath(), filter);
     ui->lineEdit_energySpectrum->clear();
+    QString filter = "Text Files (*.txt);; Data Files (*.dat)";
+    QString energySpectrum_filename = QFileDialog::getOpenFileName(this, "Select a file", QDir::homePath(), filter);
     ui->lineEdit_energySpectrum->setText(energySpectrum_filename);
 }
 
@@ -137,20 +142,34 @@ double SourceAndDetector::getDetectorThickness()
     return (ui->lineEdit_detectorThickness->text().toDouble());
 }
 
-double SourceAndDetector::getPixelSizeMM()
+void SourceAndDetector::getPixelSizeMM()
 {
-    return (ui->lineEdit_pixelSize->text().toDouble());
+    if ( (!(ui->lineEdit_pixelSize->text().isEmpty())) && ((ui->lineEdit_pixelSize->text().toDouble()) > 0) ){
+        m_pixelSizeMM = (ui->lineEdit_pixelSize->text().toDouble());
+
+    } else {
+
+        QMessageBox::warning(this, "ERROR", "Please insert a valid pixel size.");
+        return;
+    }
+
 }
 
 double SourceAndDetector::getFOVmm()
 {
-    return (ui->lineEdit_FOV->text().toDouble());
+    if (!(ui->lineEdit_FOV->text().isEmpty())){
+        return (ui->lineEdit_FOV->text().toDouble());
+
+    } else {
+        QMessageBox::warning(this, "ERROR", "Please insert a valid field-of-view's size.");
+        return 0;
+    }
 }
 
 int SourceAndDetector::getNumPixels()
 {
     double FOV = getFOVmm();
-    int numPixels = FOV/(getPixelSizeMM());
+    int numPixels = FOV/m_pixelSizeMM;
 
     return (numPixels);
 }

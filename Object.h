@@ -2,19 +2,22 @@
 #define OBJECT_H
 
 #include "DiffuserAndObject.h"
-#include "SourceAndDetector.h"
-#include "Setup.h"
+#include "Materials.h"
 
-class Object : public DiffuserAndObject, public SourceAndDetector
+class Object
 {
 public:
-    Object();
+    Object(int numObjVoxelsZ, int numPixels, double pixelObj, DiffuserAndObject* diffuserAndObject);
     ~Object();
 
-    void CreateSphere(std::vector<std::vector<std::vector<double>>>& object, double refrIndx);
-    void CreateCylinder(std::vector<std::vector<std::vector<double>>>& object, double refrIndx);
+    void CreateSphere(std::vector<std::vector<std::vector<Materials::refractiveIndex>>>& object, Materials::refractiveIndex& n_obj);
+    void CreateCylinder(std::vector<std::vector<std::vector<Materials::refractiveIndex>>>& object, Materials::refractiveIndex& n_obj);
 
 private:
+
+    int m_numObjVoxelsZ, m_numPixels;
+    double m_pixelObj;
+    DiffuserAndObject* m_diffuserAndObject;
 
 
 };

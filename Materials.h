@@ -18,6 +18,8 @@ public :
     struct refractiveIndex {
         double realPart;
         double imaginaryPart;
+
+        refractiveIndex(double re = 0, double im = 0) : realPart(re), imaginaryPart(im) {}
     };
 
     // refractive index function
@@ -26,7 +28,7 @@ public :
         std::vector<refractiveIndex> n;
 
         // Load the shared library
-        void* handle = dlopen("/home/somayeh/xraylib-master/install/lib/xrlibxrl.so", RTLD_LAZY);
+        void* handle = dlopen("/home/somayeh/xraylib-master/install/lib/libxrl.so.11", RTLD_LAZY);
         if (!handle) {
             qDebug() << "Cannot open the shared library ; "<< dlerror() << "\n";
             exit(EXIT_FAILURE);

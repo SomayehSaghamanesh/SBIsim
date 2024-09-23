@@ -1,13 +1,12 @@
 #include "DiffuserAndObject.h"
 #include "ui_DiffuserAndObject.h"
 #include "Materials.h"
-#include "SourceAndDetector.h"
-#include "Setup.h"
 
 #include <QMessageBox>
 #include <QDebug>
 #include <QFile>
 #include <QFileDialog>
+#include <algorithm>
 
 
 DiffuserAndObject::DiffuserAndObject(QWidget *parent)
@@ -26,7 +25,7 @@ DiffuserAndObject::DiffuserAndObject(QWidget *parent)
     ui->comboBox_GritMaterial->addItems(m_materialsList);
     ui->comboBox_BaseMaterial->addItems(m_materialsList);
 
-    MagFactors();
+    // MagFactors();
 
 }
 
@@ -63,19 +62,19 @@ void DiffuserAndObject::on_pushButton_VObject_clicked()
     ui->lineEdit_VObject->setText(vObject_filename);
 }
 
-float DiffuserAndObject::getCylinderDiameter()
+double DiffuserAndObject::getCylinderDiameter()
 {
-    return (ui->lineEdit_CDiameter->text().toFloat());
+    return (ui->lineEdit_CDiameter->text().toDouble());
 }
 
-float DiffuserAndObject::getCylinderHeight()
+double DiffuserAndObject::getCylinderHeight()
 {
-    return (ui->lineEdit_CHeight->text().toFloat());
+    return (ui->lineEdit_CHeight->text().toDouble());
 }
 
-float DiffuserAndObject::getSphereDiameter()
+double DiffuserAndObject::getSphereDiameter()
 {
-    return (ui->lineEdit_SDiameter->text().toFloat());
+    return (ui->lineEdit_SDiameter->text().toDouble());
 }
 
 QVector<QVector<QVector<float>>> DiffuserAndObject::getVirtualObject()
@@ -129,19 +128,44 @@ QString DiffuserAndObject::getObjectMaterial()
     return (ui->comboBox_OMaterial->currentText());
 }
 
-int DiffuserAndObject::getNumMVSlices()
+int DiffuserAndObject::getNumMVSlices(double thickness, int& numVoxelsInZ, double pixelSize)
 {
-    return (ui->comboBox_numMVSlices->currentText().toInt());
+    numVoxelsInZ = static_cast<int>(thickness/(pixelSize));
+    int numSlices = 1; // no slice
+    // qDebug() << "numVoxelsInZ" << numVoxelsInZ;
+    // qDebug() << "voxel_size =" << pixelSize;
+
+    if ((ui->comboBox_numMVSlices->currentText()) == "large"){
+        QMessageBox::warning(this, "WARNING", "Single-voxel slices have been selected.");
+        numSlices = numVoxelsInZ;// 1 slice = 1 voxel
+
+    } else if ((ui->comboBox_numMVSlices->currentText()) == "medium"){
+        numSlices = std::max((numVoxelsInZ/2), 1); // 1 slice = 2 voxels
+
+    } else if ((ui->comboBox_numMVSlices->currentText()) == "few"){
+        numSlices = std::max((numVoxelsInZ/100*20), 1); // 20% of total voxels along thickness
+
+    } else {
+        QMessageBox::warning(this, "WARNING", "only one slice has been selected for MVS process.");
+        // return 1; // no slice
+    }
+
+        return numSlices;
 }
 
 int DiffuserAndObject::getNumInterpolations()
 {
-    return (ui->lineEdit_NumInterp->text().toInt());
+    if ( (!(ui->lineEdit_NumInterp->text().isEmpty())) && ((ui->lineEdit_NumInterp->text().toInt()) > 1) ) {
+        return (ui->lineEdit_NumInterp->text().toInt());
+    } else {
+        QMessageBox::warning(this, "WARNING", "One interpolation was selected by user.");
+        return 1;
+    }
 }
 
-float DiffuserAndObject::getGritSizeMM()
+double DiffuserAndObject::getGritSizeMM()
 {
-    return (ui->lineEdit_gritSize->text().toFloat());
+    return (ui->lineEdit_gritSize->text().toDouble());
 }
 
 QString DiffuserAndObject::getGritMaterial()
@@ -172,7 +196,7 @@ double DiffuserAndObject::getObjectThickness()
 double DiffuserAndObject::getDiffuserThickness()
 {
     if (!(ui->lineEdit_diffThickness->text().isEmpty()) && ((ui->lineEdit_diffThickness->text().toFloat()) > 0)){
-        return (ui->lineEdit_diffThickness->text().toFloat());
+        return (ui->lineEdit_diffThickness->text().toDouble());
     } else {
         QMessageBox::warning(this, "ERROR", "Please insert a valid diffuser thickness (mm).");
         return 0;
@@ -180,43 +204,45 @@ double DiffuserAndObject::getDiffuserThickness()
 
 }
 
-void DiffuserAndObject::MagFactors()
-{
-    m_dM_obj.clear();
-    m_dM_diff.clear();
-    m_fM_obj.clear();
-    m_fM_diff.clear();
+// void DiffuserAndObject::MagFactors()
+// {
+//     // magnification factors at each slice inside obj/diff
+//     m_dM_obj.clear();
+//     m_dM_diff.clear();
+//     // mag factors based on the fresnel scaling theory
+//     m_fM_obj.clear();
+//     m_fM_diff.clear();
 
-    m_objThickness = getObjectThickness();
-    m_diffThickness = getDiffuserThickness();
+//     m_objThickness = getObjectThickness();
+//     m_diffThickness = getDiffuserThickness();
 
-    Setup setup;
-    setup.getDistances();
+//     Setup setup;
+//     setup.getDistances();
 
-    SourceAndDetector det;
-    m_pixelSize = det.getPixelSizeMM();
-    m_numPixels = det.getNumPixels();
+//     SourceAndDetector det;
+//     m_pixelSize = det.m_pixelSizeMM;
+//     m_numPixels = det.getNumPixels();
 
-    // global magnification factors
-    m_M_obj = (setup.m_SDD)/(setup.m_SOD);
-    m_M_diff = (setup.m_SDD)/(setup.m_SdD);
+//     // global magnification factors
+//     m_M_obj = (setup.m_SDD)/(setup.m_SOD);
+//     m_M_diff = (setup.m_SDD)/(setup.m_SdD);
 
-    m_pixelObj = m_pixelSize/m_M_obj;
-    m_pixelDiff = m_pixelSize/m_M_diff;
+//     m_pixelObj = m_pixelSize/m_M_obj;
+//     m_pixelDiff = m_pixelSize/m_M_diff;
 
-    m_objThicknessAsIndex = m_objThickness/m_pixelObj;
-    m_diffThicknessAsIndex = m_diffThickness/m_pixelDiff;
+//     m_objThicknessAsIndex = m_objThickness/m_pixelObj;
+//     m_diffThicknessAsIndex = m_diffThickness/m_pixelDiff;
 
-    for (int i = 0 ; i < m_objThicknessAsIndex ; i++)
-    {
-        m_dM_obj.push_back((setup.m_SDD)/((setup.m_SOD) - m_objThickness/2 + (i - 1)*m_pixelSize/m_M_obj)); // dynamic magnification factors of slices
-        m_fM_obj.push_back(((setup.m_SOD) - m_objThickness/2 + (i - 1)*m_pixelSize/m_M_obj)/((setup.m_SOD) - m_objThickness/2));; // Magnification after applying Fresnel scaling theory
-    }
+//     for (int i = 0 ; i < m_objThicknessAsIndex ; i++)
+//     {
+//         m_dM_obj.push_back((setup.m_SDD)/((setup.m_SOD) - m_objThickness/2 + (i - 1)*m_pixelSize/m_M_obj)); // dynamic magnification factors of slices
+//         m_fM_obj.push_back(((setup.m_SOD) - m_objThickness/2 + (i - 1)*m_pixelSize/m_M_obj)/((setup.m_SOD) - m_objThickness/2));; // Magnification after applying Fresnel scaling theory
+//     }
 
-    for (int i = 0 ; i < m_diffThicknessAsIndex ; i++)
-    {
-        m_dM_diff.push_back((setup.m_SDD)/((setup.m_SdD) - m_diffThickness/2 + (i - 1)*m_pixelSize/m_M_diff)); // dynamic magnification factors of slices
-        m_fM_diff.push_back(((setup.m_SdD) - m_diffThickness/2 + (i - 1)*m_pixelSize/m_M_diff)/((setup.m_SdD) - m_diffThickness/2)); // Magnification after applying Fresnel scaling theory
-    }
-}
+//     for (int i = 0 ; i < m_diffThicknessAsIndex ; i++)
+//     {
+//         m_dM_diff.push_back((setup.m_SDD)/((setup.m_SdD) - m_diffThickness/2 + (i - 1)*m_pixelSize/m_M_diff)); // dynamic magnification factors of slices
+//         m_fM_diff.push_back(((setup.m_SdD) - m_diffThickness/2 + (i - 1)*m_pixelSize/m_M_diff)/((setup.m_SdD) - m_diffThickness/2)); // Magnification after applying Fresnel scaling theory
+//     }
+// }
 

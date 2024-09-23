@@ -16,8 +16,8 @@ public:
     ~SourceAndDetector();
 
     void getXrayEnergy(std::vector<double>& energyVector, std::vector<double>& spectrumVector);
+    void getPixelSizeMM();
     double getDetectorThickness();
-    double getPixelSizeMM();
     QString getDetectorMaterial();
     int getNumPixels();
     double getFOVmm();
@@ -27,6 +27,8 @@ public:
     bool m_coneBeam{false};
     bool m_monochrome{false};
     bool m_polychrome{false};
+
+    double m_pixelSizeMM{0};
 
     std::vector<double> m_waveNumber();
 

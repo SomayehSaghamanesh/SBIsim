@@ -3,26 +3,29 @@
 
 #include "DiffuserAndObject.h"
 // #include "SourceAndDetector.h"
-#include "Setup.h"
-#include <random>
+#include "Materials.h"
 
-class Diffuser : public DiffuserAndObject
+
+class Diffuser
 {
 
 public:
 
-    Diffuser();
+    Diffuser(int numPixels, int numDiffVoxelsZ, double pixelDiff, DiffuserAndObject *diffuserAndObject);
     ~Diffuser();
 
-    void CreateDiffuser(std::vector<std::vector<std::vector<double>>>& diffuser, double refrIndx);
+    void CreateDiffuser(std::vector<std::vector<std::vector<Materials::refractiveIndex>>>& diffuser, Materials::refractiveIndex& n_diff, Materials::refractiveIndex& n_base);
 
 private:
 
+    int m_numPixels, m_numDiffVoxelsZ;
+    double m_pixelDiff;
+    DiffuserAndObject* m_diffuserAndObject;
     std::array<int, 3> m_diffuserSize;
     int m_numGrit;
+
     void getRandomValue(std::vector<int>& myVec, int lower_indx, int upper_indx);
     void DistributeGrits(std::vector<int>& cx, std::vector<int>& cy, std::vector<int>& cz, std::vector<int>& r);
-
 
 };
 

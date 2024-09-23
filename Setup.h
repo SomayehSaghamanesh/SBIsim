@@ -34,8 +34,8 @@ private slots:
     void on_radioButton_Tomography_toggled(bool checked);
 
 
+private:
 signals:
-
     void StartButtonClicked();
 
 
