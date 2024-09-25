@@ -70,7 +70,7 @@ void Diffuser::DistributeGrits(std::vector<int>& cx, std::vector<int>& cy, std::
     getRandomValue(cz, maxGritRadiusIndx, m_diffuserSize[2]-maxGritRadiusIndx);
 }
 
-void Diffuser::CreateDiffuser(std::vector<std::vector<std::vector<Materials::refractiveIndex>>>& diffuser, Materials::refractiveIndex& n_diff, Materials::refractiveIndex& n_base)
+void Diffuser::CreateDiffuser(std::vector<std::vector<std::vector<int>>>& diffuser)
 {
     std::vector<int> cx{0}, cy{0}, cz{0}, r{0};
     int r_squared = 0;
@@ -96,9 +96,9 @@ void Diffuser::CreateDiffuser(std::vector<std::vector<std::vector<Materials::ref
                     int dy = j - cy[s];
                     int dz = k - cz[s];
                     if (dx * dx + dy * dy + dz * dz <= r_squared) {
-                        diffuser[i][j][k] = n_diff;
+                        diffuser[i][j][k] = 1;
                     } else {
-                        diffuser[i][j][k] = n_base;
+                        diffuser[i][j][k] = 2;
                     }
                 }
             }

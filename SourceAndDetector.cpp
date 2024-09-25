@@ -6,8 +6,9 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QFile>
-#include <QVector>
+// #include <QVector>
 #include <QDebug>
+#include <algorithm>
 
 
 SourceAndDetector::SourceAndDetector(QWidget *parent)
@@ -142,15 +143,15 @@ double SourceAndDetector::getDetectorThickness()
     return (ui->lineEdit_detectorThickness->text().toDouble());
 }
 
-void SourceAndDetector::getPixelSizeMM()
+double SourceAndDetector::getPixelSizeMM()
 {
     if ( (!(ui->lineEdit_pixelSize->text().isEmpty())) && ((ui->lineEdit_pixelSize->text().toDouble()) > 0) ){
-        m_pixelSizeMM = (ui->lineEdit_pixelSize->text().toDouble());
+        return (ui->lineEdit_pixelSize->text().toDouble());
 
     } else {
 
         QMessageBox::warning(this, "ERROR", "Please insert a valid pixel size.");
-        return;
+        return 0;
     }
 
 }
@@ -169,8 +170,8 @@ double SourceAndDetector::getFOVmm()
 int SourceAndDetector::getNumPixels()
 {
     double FOV = getFOVmm();
-    int numPixels = FOV/m_pixelSizeMM;
-
+    double pixelSize = getPixelSizeMM();
+    int numPixels = FOV/pixelSize;
     return (numPixels);
 }
 
@@ -190,4 +191,29 @@ double SourceAndDetector::waveLength(double energy)
 }
 
 
+void SourceAndDetector::Meshgrid(std::vector<std::vector<float>>& X, std::vector<std::vector<float>>& Y, int& numPixels, double& pixelSize)
+{
+    // Resize X and Y to be n x n matrices
+    X.resize(numPixels, std::vector<float>(numPixels, 0.0));
+    Y.resize(numPixels, std::vector<float>(numPixels, 0.0));
+
+    // Fill X and Y coordinate matrices
+    for (int i = 0; i < numPixels ; i++) {
+        for (int j = 0; j < numPixels; j++) {
+            X[i][j] = static_cast<float>((-floor(numPixels/2) + i)*pixelSize);  // opposite to: X coordinates vary along the columns
+            Y[i][j] = static_cast<float>((-floor(numPixels/2) + j)*pixelSize);  // opposite to: Y coordinates vary along the rows
+        }
+    }
+}
+
+void SourceAndDetector::DetectorCoordinates(std::vector<std::vector<float>>& X, std::vector<std::vector<float>>& Y, std::vector<std::vector<float>>& rsqr, int& numPixels)
+{
+    rsqr.resize(numPixels, std::vector<float>(numPixels, 0.0));
+    for (int i = 0 ; i < numPixels ; i++){
+        for (int j = 0 ; j < numPixels ; j++){
+            // r*r in mm
+            rsqr[i][j] = std::pow(X[i][j], 2) + std::pow(Y[i][j], 2);
+        }
+    }
+}
 

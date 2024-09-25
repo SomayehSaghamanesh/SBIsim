@@ -16,19 +16,23 @@ public:
     ~SourceAndDetector();
 
     void getXrayEnergy(std::vector<double>& energyVector, std::vector<double>& spectrumVector);
-    void getPixelSizeMM();
+    double getPixelSizeMM();
     double getDetectorThickness();
     QString getDetectorMaterial();
     int getNumPixels();
     double getFOVmm();
     double waveLength(double energy);
+    void Meshgrid(std::vector<std::vector<float>>& X, std::vector<std::vector<float>>& Y, int& numPixels, double& pixelSize);
+    void DetectorCoordinates(std::vector<std::vector<float>>& X, std::vector<std::vector<float>>& Y, std::vector<std::vector<float>>& rsqr, int& numPixels);
+
 
     bool m_parBeam{false};
     bool m_coneBeam{false};
     bool m_monochrome{false};
     bool m_polychrome{false};
 
-    double m_pixelSizeMM{0};
+    // double m_pixelSizeMM{0};
+    // int m_numPixels{0};
 
     std::vector<double> m_waveNumber();
 

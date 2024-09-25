@@ -2,9 +2,6 @@
 #define DIFFUSER_H
 
 #include "DiffuserAndObject.h"
-// #include "SourceAndDetector.h"
-#include "Materials.h"
-
 
 class Diffuser
 {
@@ -14,7 +11,7 @@ public:
     Diffuser(int numPixels, int numDiffVoxelsZ, double pixelDiff, DiffuserAndObject *diffuserAndObject);
     ~Diffuser();
 
-    void CreateDiffuser(std::vector<std::vector<std::vector<Materials::refractiveIndex>>>& diffuser, Materials::refractiveIndex& n_diff, Materials::refractiveIndex& n_base);
+    void CreateDiffuser(std::vector<std::vector<std::vector<int>>>& diffuser);
 
 private:
 

@@ -1,11 +1,12 @@
 #include "Object.h"
 
 
-Object::Object(int numObjVoxelsZ, int numPixels, double pixelObj, DiffuserAndObject* diffuserAndObject)
+Object::Object(int numObjVoxelsZ, int numPixels, double pixelObj, DiffuserAndObject* diffuserAndObject, int objectType)
     : m_numObjVoxelsZ(numObjVoxelsZ)
     , m_numPixels(numPixels)
     , m_pixelObj(pixelObj)
     , m_diffuserAndObject(diffuserAndObject)
+    , m_objectType(objectType)
 {
 
 }
@@ -14,7 +15,24 @@ Object::~Object()
 {
 }
 
-void Object::CreateSphere(std::vector<std::vector<std::vector<Materials::refractiveIndex>>>& object, Materials::refractiveIndex& n_obj)
+void Object::CreateObject(std::vector<std::vector<std::vector<int>>>& object)
+{
+    if (m_objectType == 1){
+        CreateCylinder(object);
+
+    } else if (m_objectType == 2){
+        CreateSphere(object);
+
+    } else if (m_objectType == 3){
+        CreateVirtualObject();
+
+    } else {
+        std::runtime_error("ERROR: Please select a valid object.");
+        return;
+    }
+}
+
+void Object::CreateSphere(std::vector<std::vector<std::vector<int>>>& object)
 {
     int r = 0;
 
@@ -23,7 +41,7 @@ void Object::CreateSphere(std::vector<std::vector<std::vector<Materials::refract
     }
     // double d = getSphereDiameter();
     // int r = (d/2)/m_pixelObj; // sphere radius as index
-    int originInPlane = m_numPixels/2;
+    int originInPlane = m_numPixels/2 + 1;
 
     qDebug() << "sphere diam : " << (m_diffuserAndObject->getSphereDiameter());
     qDebug() << "m_pixepObj inside Object : " << m_pixelObj;
@@ -38,7 +56,7 @@ void Object::CreateSphere(std::vector<std::vector<std::vector<Materials::refract
             {
                 if ( ((i - originInPlane)*(i - originInPlane) + (j - originInPlane)*(j - originInPlane) + (k - originInPlane)*(k - originInPlane)) <= r*r){
 
-                    object[i][j][k] = n_obj;
+                    object[i][j][k] = 1;
                 }
 
             }
@@ -46,12 +64,12 @@ void Object::CreateSphere(std::vector<std::vector<std::vector<Materials::refract
     }
 }
 
-void Object::CreateCylinder(std::vector<std::vector<std::vector<Materials::refractiveIndex>>>& object, Materials::refractiveIndex& n_obj)
+void Object::CreateCylinder(std::vector<std::vector<std::vector<int>>>& object)
 {
     int r = (m_diffuserAndObject->getCylinderDiameter())/2/m_pixelObj;
     int h = (m_diffuserAndObject->getCylinderHeight())/2/m_pixelObj; // half-height
-    int originZ = m_numObjVoxelsZ/2;
-    int originInPlane = m_numPixels/2;
+    int originZ = m_numObjVoxelsZ/2 + 1;
+    int originInPlane = m_numPixels/2 + 1;
 
     for (int i = 0 ; i < m_numPixels ; i++)
     {
@@ -61,7 +79,7 @@ void Object::CreateCylinder(std::vector<std::vector<std::vector<Materials::refra
             {
                 if ( (((i - originInPlane)*(i - originInPlane) + (k - originZ)*(k - originZ)) <= r*r) && (std::abs(j - originInPlane) <= h) ){
 
-                    object[i][j][k] = n_obj;
+                    object[i][j][k] = 1;
                 }
 
             }
@@ -69,3 +87,7 @@ void Object::CreateCylinder(std::vector<std::vector<std::vector<Materials::refra
     }
 }
 
+void Object::CreateVirtualObject()
+{
+
+}
