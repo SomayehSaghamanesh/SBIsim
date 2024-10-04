@@ -1,12 +1,11 @@
 #include "Object.h"
 
 
-Object::Object(int numObjVoxelsZ, int numPixels, double pixelObj, DiffuserAndObject* diffuserAndObject, int objectType)
+Object::Object(int numObjVoxelsZ, int numPixels, double pixelObj, DiffuserAndObject* diffuserAndObject)
     : m_numObjVoxelsZ(numObjVoxelsZ)
     , m_numPixels(numPixels)
     , m_pixelObj(pixelObj)
     , m_diffuserAndObject(diffuserAndObject)
-    , m_objectType(objectType)
 {
 
 }
@@ -17,13 +16,13 @@ Object::~Object()
 
 void Object::CreateObject(std::vector<std::vector<std::vector<int>>>& object)
 {
-    if (m_objectType == 1){
+    if (m_diffuserAndObject->getObjectName() == "Cylinder"){
         CreateCylinder(object);
 
-    } else if (m_objectType == 2){
+    } else if (m_diffuserAndObject->getObjectName() == "Sphere"){
         CreateSphere(object);
 
-    } else if (m_objectType == 3){
+    } else if (m_diffuserAndObject->getObjectName() == "VirtualObject"){
         CreateVirtualObject();
 
     } else {
@@ -41,7 +40,8 @@ void Object::CreateSphere(std::vector<std::vector<std::vector<int>>>& object)
     }
     // double d = getSphereDiameter();
     // int r = (d/2)/m_pixelObj; // sphere radius as index
-    int originInPlane = m_numPixels/2 + 1;
+    int originInPlane = m_numPixels/2;
+    int originZ = m_numObjVoxelsZ/2;
 
     qDebug() << "sphere diam : " << (m_diffuserAndObject->getSphereDiameter());
     qDebug() << "m_pixepObj inside Object : " << m_pixelObj;
@@ -54,7 +54,7 @@ void Object::CreateSphere(std::vector<std::vector<std::vector<int>>>& object)
         {
             for (int  k = 0 ; k < m_numObjVoxelsZ ; k++)
             {
-                if ( ((i - originInPlane)*(i - originInPlane) + (j - originInPlane)*(j - originInPlane) + (k - originInPlane)*(k - originInPlane)) <= r*r){
+                if ( ((i - originInPlane)*(i - originInPlane) + (j - originInPlane)*(j - originInPlane) + (k - originZ)*(k - originZ)) <= r*r){
 
                     object[i][j][k] = 1;
                 }
@@ -68,8 +68,8 @@ void Object::CreateCylinder(std::vector<std::vector<std::vector<int>>>& object)
 {
     int r = (m_diffuserAndObject->getCylinderDiameter())/2/m_pixelObj;
     int h = (m_diffuserAndObject->getCylinderHeight())/2/m_pixelObj; // half-height
-    int originZ = m_numObjVoxelsZ/2 + 1;
-    int originInPlane = m_numPixels/2 + 1;
+    int originZ = m_numObjVoxelsZ/2;
+    int originInPlane = m_numPixels/2;
 
     for (int i = 0 ; i < m_numPixels ; i++)
     {

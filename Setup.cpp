@@ -48,11 +48,11 @@ double Setup::getTomoAngleDeg()
     return (360/getNumProjections());
 }
 
-void Setup::getDistances()
+void Setup::getDistances() // in [m]
 {
     if (!(ui->lineEdit_SOD->text().isEmpty()) && ((ui->lineEdit_SOD->text().toDouble()) > 0)){
 
-        m_SOD = (ui->lineEdit_SOD->text().toDouble());
+        m_SOD = 0.001*(ui->lineEdit_SOD->text().toDouble());
 
     } else {
 
@@ -62,7 +62,7 @@ void Setup::getDistances()
     //
     if (!(ui->lineEdit_SdD->text().isEmpty()) && ((ui->lineEdit_SdD->text().toDouble()) > 0.0)){
 
-        m_SdD = (ui->lineEdit_SdD->text().toDouble());
+        m_SdD = 0.001*(ui->lineEdit_SdD->text().toDouble());
 
     } else {
 
@@ -72,7 +72,7 @@ void Setup::getDistances()
     //
     if (!(ui->lineEdit_SDD->text().isEmpty()) && ((ui->lineEdit_SDD->text().toDouble()) > 0.0)){
 
-        m_SDD = (ui->lineEdit_SDD->text().toDouble());
+        m_SDD = 0.001*(ui->lineEdit_SDD->text().toDouble());
 
     } else {
 

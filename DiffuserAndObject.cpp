@@ -20,10 +20,11 @@ DiffuserAndObject::DiffuserAndObject(QWidget *parent)
     ui->lineEdit_SDiameter->setEnabled(false);
 
     MaterialsList();
-    ui->comboBox_OMaterial->addItems(m_materialsList);
+    ui->comboBox_objectMaterial->addItems(m_materialsList);
     ui->comboBox_numMVSlices->addItems(m_num_MVS_slices);
     ui->comboBox_GritMaterial->addItems(m_materialsList);
     ui->comboBox_BaseMaterial->addItems(m_materialsList);
+    ui->comboBox_gritDensity->addItems(m_gritDensity);
 
     // MagFactors();
 
@@ -54,6 +55,23 @@ void DiffuserAndObject::on_radioButton_VObject_toggled(bool checked)
     m_virtualObject = checked;
 }
 
+QString DiffuserAndObject::getObjectName()
+{
+    if (m_sphere){
+        return ("Sphere");
+
+    } else if (m_cylinder){
+        return ("Cylinder");
+
+    } else if (m_virtualObject){
+        return ("VirtualObject");
+
+    } else {
+        QMessageBox::warning(this, "ERROR", "No object was selected. Aborting ...");
+        return "";
+    }
+}
+
 void DiffuserAndObject::on_pushButton_VObject_clicked()
 {
     QString filter = "Image Files (*.raw, *.img)";
@@ -64,17 +82,17 @@ void DiffuserAndObject::on_pushButton_VObject_clicked()
 
 double DiffuserAndObject::getCylinderDiameter()
 {
-    return (ui->lineEdit_CDiameter->text().toDouble());
+    return (0.001*(ui->lineEdit_CDiameter->text().toDouble())); // [m]
 }
 
 double DiffuserAndObject::getCylinderHeight()
 {
-    return (ui->lineEdit_CHeight->text().toDouble());
+    return (0.001*(ui->lineEdit_CHeight->text().toDouble())); // [m]
 }
 
 double DiffuserAndObject::getSphereDiameter()
 {
-    return (ui->lineEdit_SDiameter->text().toDouble());
+    return (0.001*(ui->lineEdit_SDiameter->text().toDouble())); // [m]
 }
 
 QVector<QVector<QVector<float>>> DiffuserAndObject::getVirtualObject()
@@ -125,12 +143,12 @@ void DiffuserAndObject::MaterialsList()
 
 QString DiffuserAndObject::getObjectMaterial()
 {
-    return (ui->comboBox_OMaterial->currentText());
+    return (ui->comboBox_objectMaterial->currentText());
 }
 
-int DiffuserAndObject::getNumMVSlices(double thickness, int& numVoxelsInZ, double pixelSize)
+int DiffuserAndObject::getNumMVSlices(const double& thickness, int& numVoxelsInZ, const double& pixelSize, const double& magnification)
 {
-    numVoxelsInZ = static_cast<int>(thickness/(pixelSize));
+    numVoxelsInZ = static_cast<int>(thickness/(pixelSize/magnification));
     int numSlices = 1; // no slice
     // qDebug() << "numVoxelsInZ" << numVoxelsInZ;
     // qDebug() << "voxel_size =" << pixelSize;
@@ -163,9 +181,9 @@ int DiffuserAndObject::getNumInterpolations()
     }
 }
 
-double DiffuserAndObject::getGritSizeMM()
+double DiffuserAndObject::getGritSize()
 {
-    return (ui->lineEdit_gritSize->text().toDouble());
+    return (0.001*(ui->lineEdit_gritSize->text().toDouble())); // [m]
 }
 
 QString DiffuserAndObject::getGritMaterial()
@@ -195,8 +213,8 @@ double DiffuserAndObject::getObjectThickness()
 
 double DiffuserAndObject::getDiffuserThickness()
 {
-    if (!(ui->lineEdit_diffThickness->text().isEmpty()) && ((ui->lineEdit_diffThickness->text().toFloat()) > 0)){
-        return (ui->lineEdit_diffThickness->text().toDouble());
+    if (!(ui->lineEdit_diffThickness->text().isEmpty()) && ((ui->lineEdit_diffThickness->text().toDouble()) > 0)){
+        return (0.001*(ui->lineEdit_diffThickness->text().toDouble())); // [m]
     } else {
         QMessageBox::warning(this, "ERROR", "Please insert a valid diffuser thickness (mm).");
         return 0;
@@ -204,45 +222,7 @@ double DiffuserAndObject::getDiffuserThickness()
 
 }
 
-// void DiffuserAndObject::MagFactors()
-// {
-//     // magnification factors at each slice inside obj/diff
-//     m_dM_obj.clear();
-//     m_dM_diff.clear();
-//     // mag factors based on the fresnel scaling theory
-//     m_fM_obj.clear();
-//     m_fM_diff.clear();
-
-//     m_objThickness = getObjectThickness();
-//     m_diffThickness = getDiffuserThickness();
-
-//     Setup setup;
-//     setup.getDistances();
-
-//     SourceAndDetector det;
-//     m_pixelSize = det.m_pixelSizeMM;
-//     m_numPixels = det.getNumPixels();
-
-//     // global magnification factors
-//     m_M_obj = (setup.m_SDD)/(setup.m_SOD);
-//     m_M_diff = (setup.m_SDD)/(setup.m_SdD);
-
-//     m_pixelObj = m_pixelSize/m_M_obj;
-//     m_pixelDiff = m_pixelSize/m_M_diff;
-
-//     m_objThicknessAsIndex = m_objThickness/m_pixelObj;
-//     m_diffThicknessAsIndex = m_diffThickness/m_pixelDiff;
-
-//     for (int i = 0 ; i < m_objThicknessAsIndex ; i++)
-//     {
-//         m_dM_obj.push_back((setup.m_SDD)/((setup.m_SOD) - m_objThickness/2 + (i - 1)*m_pixelSize/m_M_obj)); // dynamic magnification factors of slices
-//         m_fM_obj.push_back(((setup.m_SOD) - m_objThickness/2 + (i - 1)*m_pixelSize/m_M_obj)/((setup.m_SOD) - m_objThickness/2));; // Magnification after applying Fresnel scaling theory
-//     }
-
-//     for (int i = 0 ; i < m_diffThicknessAsIndex ; i++)
-//     {
-//         m_dM_diff.push_back((setup.m_SDD)/((setup.m_SdD) - m_diffThickness/2 + (i - 1)*m_pixelSize/m_M_diff)); // dynamic magnification factors of slices
-//         m_fM_diff.push_back(((setup.m_SdD) - m_diffThickness/2 + (i - 1)*m_pixelSize/m_M_diff)/((setup.m_SdD) - m_diffThickness/2)); // Magnification after applying Fresnel scaling theory
-//     }
-// }
-
+QString DiffuserAndObject::getGritDensity()
+{
+    return (ui->comboBox_gritDensity->currentText());
+}

@@ -6,20 +6,38 @@
 #include <algorithm>
 #include <cmath>
 
-Diffuser::Diffuser(int numPixels, int numDiffVoxelsZ, double pixelDiff, DiffuserAndObject *diffuserAndObject)
+Diffuser::Diffuser(const int numPixels, const int numDiffVoxelsZ, const double pixelDiff, DiffuserAndObject *diffuserAndObject, int& m_numGrits)
     : m_numPixels(numPixels)
     , m_numDiffVoxelsZ(numDiffVoxelsZ)
     , m_pixelDiff(pixelDiff)
     , m_diffuserAndObject(diffuserAndObject)
 {
     m_diffuserSize = {m_numPixels, m_numPixels, m_numDiffVoxelsZ};
-    m_numGrit = 100;
+    m_numGrits = CalculateNumGrits();
+
 }
 
 Diffuser::~Diffuser(){
 
 }
 
+int Diffuser::CalculateNumGrits()
+{ // the volume of all average-size grit spheres to the base volume is 30-70%
+    double baseVol = (m_numPixels*m_pixelDiff) * (m_numPixels*m_pixelDiff) * (m_numDiffVoxelsZ*m_pixelDiff);
+    double gritVol = 4/3*pi*std::pow(((m_diffuserAndObject->getGritSize())/2), 3);
+
+    if (m_diffuserAndObject->getGritDensity() =="Dense") {
+        return (round(baseVol/gritVol*0.7));
+
+    } else if (m_diffuserAndObject->getGritDensity() == "Standard") {
+        return (round(baseVol/gritVol*0.5));
+
+    } else if (m_diffuserAndObject->getGritDensity() == "Sparse") {
+        return (round(baseVol/gritVol*0.3));
+    } else {
+        return 1;
+    }
+}
 
 // generate random integer numbers for radius, center_x,y,z of the grit volume
 void Diffuser::getRandomValue(std::vector<int>& myVec, int lower_size, int upper_size)
@@ -28,10 +46,10 @@ void Diffuser::getRandomValue(std::vector<int>& myVec, int lower_size, int upper
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> gritDis(lower_size, upper_size);
 
-    for (int i = 0 ; i < m_numGrit ; i++)
+    for (int i = 0 ; i < m_numGrits ; i++)
     {
         myVec.push_back(gritDis(gen));
-        qDebug() << "c: " << myVec[i];
+        // qDebug() << "c: " << myVec[i];
     }
 }
 
@@ -40,7 +58,7 @@ void Diffuser::DistributeGrits(std::vector<int>& cx, std::vector<int>& cy, std::
     int gritRadiusIndx = 0;
     cx.clear(); cy.clear(); cz.clear(); r.clear();
 
-    double meanGritRadius = (m_diffuserAndObject->getGritSizeMM()); // mean
+    double meanGritRadius = (m_diffuserAndObject->getGritSize()); // mean
     double stdDev = 0.2 * meanGritRadius; // std
     double maxGritRadius = meanGritRadius + 3 * stdDev;
     int maxGritRadiusIndx = maxGritRadius/m_pixelDiff;
@@ -56,7 +74,7 @@ void Diffuser::DistributeGrits(std::vector<int>& cx, std::vector<int>& cy, std::
     std::normal_distribution<> dis(meanGritRadius, stdDev);
 
     // Generate the radii
-    for (int i = 0; i < m_numGrit; i++) {
+    for (int i = 0; i < m_numGrits; i++) {
 
         gritRadiusIndx = std::round((dis(gen))/m_pixelDiff);
         gritRadiusIndx = std::clamp(gritRadiusIndx, 1, maxGritRadiusIndx);
@@ -96,9 +114,9 @@ void Diffuser::CreateDiffuser(std::vector<std::vector<std::vector<int>>>& diffus
                     int dy = j - cy[s];
                     int dz = k - cz[s];
                     if (dx * dx + dy * dy + dz * dz <= r_squared) {
-                        diffuser[i][j][k] = 1;
-                    } else {
-                        diffuser[i][j][k] = 2;
+                        diffuser[i][j][k] = 1; // for grit
+                    // } else {
+                    //     diffuser[i][j][k] = 2; // for base
                     }
                 }
             }

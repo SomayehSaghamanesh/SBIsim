@@ -21,9 +21,9 @@ public:
     QString getDetectorMaterial();
     int getNumPixels();
     double getFOVmm();
-    double waveLength(double energy);
-    void Meshgrid(std::vector<std::vector<float>>& X, std::vector<std::vector<float>>& Y, int& numPixels, double& pixelSize);
-    void DetectorCoordinates(std::vector<std::vector<float>>& X, std::vector<std::vector<float>>& Y, std::vector<std::vector<float>>& rsqr, int& numPixels);
+    std::vector<double> getWaveNumber(std::vector<double>& energy);
+    void Meshgrid(std::vector<std::vector<double>>& X, std::vector<std::vector<double>>& Y, int& numPixels, double& pixelSize);
+    void DetectorCoordinates(std::vector<std::vector<double>>& X, std::vector<std::vector<double>>& Y, std::vector<std::vector<double>>& rsqr, int& numPixels);
 
 
     bool m_parBeam{false};

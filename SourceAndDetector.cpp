@@ -8,7 +8,6 @@
 #include <QFile>
 // #include <QVector>
 #include <QDebug>
-#include <algorithm>
 
 
 SourceAndDetector::SourceAndDetector(QWidget *parent)
@@ -185,35 +184,44 @@ void SourceAndDetector::MaterialsList()
     m_materialsList.sort(Qt::CaseInsensitive);
 }
 
-double SourceAndDetector::waveLength(double energy)
+std::vector<double> SourceAndDetector::getWaveNumber(std::vector<double>& energy)
 {
-    return (2*pi*energy/hc);
+    std::vector<double> k; // [1/m]
+    for (size_t i = 0 ; i < energy.size() ; i++)
+    {
+        k.push_back(2*pi*energy[i]/hc);
+    }
+        return k;
 }
 
-
-void SourceAndDetector::Meshgrid(std::vector<std::vector<float>>& X, std::vector<std::vector<float>>& Y, int& numPixels, double& pixelSize)
+void SourceAndDetector::Meshgrid(std::vector<std::vector<double>>& X, std::vector<std::vector<double>>& Y, int& numPixels, double& pixelSize)
 {
     // Resize X and Y to be n x n matrices
-    X.resize(numPixels, std::vector<float>(numPixels, 0.0));
-    Y.resize(numPixels, std::vector<float>(numPixels, 0.0));
+    X.resize(numPixels, std::vector<double>(numPixels, 0.0));
+    Y.resize(numPixels, std::vector<double>(numPixels, 0.0));
 
     // Fill X and Y coordinate matrices
     for (int i = 0; i < numPixels ; i++) {
         for (int j = 0; j < numPixels; j++) {
-            X[i][j] = static_cast<float>((-floor(numPixels/2) + i)*pixelSize);  // opposite to: X coordinates vary along the columns
-            Y[i][j] = static_cast<float>((-floor(numPixels/2) + j)*pixelSize);  // opposite to: Y coordinates vary along the rows
+            X[i][j] = static_cast<float>((-floor(numPixels/2) + i)*pixelSize*0.001);  // opposite to: X coordinates vary along the columns
+            Y[i][j] = static_cast<float>((-floor(numPixels/2) + j)*pixelSize*0.001);  // opposite to: Y coordinates vary along the rows
         }
     }
 }
 
-void SourceAndDetector::DetectorCoordinates(std::vector<std::vector<float>>& X, std::vector<std::vector<float>>& Y, std::vector<std::vector<float>>& rsqr, int& numPixels)
+void SourceAndDetector::DetectorCoordinates(std::vector<std::vector<double>>& X, std::vector<std::vector<double>>& Y, std::vector<std::vector<double>>& rsqr, int& numPixels)
 {
-    rsqr.resize(numPixels, std::vector<float>(numPixels, 0.0));
+    rsqr.resize(numPixels, std::vector<double>(numPixels, 0.0));
     for (int i = 0 ; i < numPixels ; i++){
         for (int j = 0 ; j < numPixels ; j++){
-            // r*r in mm
-            rsqr[i][j] = std::pow(X[i][j], 2) + std::pow(Y[i][j], 2);
+            // r*r in m
+            rsqr[i][j] = std::pow(X[i][j], 2) + std::pow(Y[i][j], 2); // [m^2]
         }
     }
 }
 
+// TODO
+// std::vector<double> SourceAndDetector::getDetectorEnergyResponse()
+// {
+
+// }

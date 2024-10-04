@@ -19,16 +19,17 @@ class DiffuserAndObject : public QWidget
         double getCylinderDiameter();
         double getCylinderHeight();
         double getSphereDiameter();
+        QString getObjectName();
         QVector<QVector<QVector<float>>> getVirtualObject();
         QString getObjectMaterial();
-        int getNumMVSlices(double thickness, int& numVoxelsInZ, double pixelSize);
+        int getNumMVSlices(const double& thickness, int& numVoxelsInZ, const double& pixelSize, const double& magnification);
         int getNumInterpolations();
-        double getGritSizeMM();
+        double getGritSize();
         QString getGritMaterial();
         QString getBaseMaterial();
         double getObjectThickness();
         double getDiffuserThickness();
-        void MagFactors();
+        QString getGritDensity();
 
         bool m_cylinder{false}, m_sphere{false}, m_virtualObject{false};
 
@@ -51,6 +52,7 @@ class DiffuserAndObject : public QWidget
         QVector<QVector<QVector<float>>> m_vObject;
         QStringList m_materialsList = {};
         QStringList m_num_MVS_slices = {"few", "medium", "large"};
+        QStringList m_gritDensity = {"Dense", "Standard", "Sparse"};
 
 
     // protected :

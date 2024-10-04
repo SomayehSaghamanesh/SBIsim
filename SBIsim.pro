@@ -4,9 +4,13 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += c++17
 
-LIBS += -L/home/somayeh/xraylib-master/install/lib -lxrl
 QMAKE_LFLAGS += -Wl,-rpath,/home/somayeh/xraylib-master/install/lib
-INCLUDEPATH +=/usr/local/include/ITK-6.0
+LIBS += -L/home/somayeh/xraylib-master/install/lib -lxrl
+# ITK_LIBS = $$system(find /usr/lib -name 'libITK*-5.2.so' -exec basename {} .so \; | sed 's/^/ -l/' | tr '\n' ' ')
+# LIBS += -L/usr/lib $$ITK_LIBS
+LIBS += -L/usr/lib -lITKCommon-5.2 -lITKIOImageBase-5.2 -lITKImageFeature-5.2 -lITKIOPNG-5.2 -lITKIOJPEG-5.2 \
+        -lITKStatistics-5.2 -lITKTransform-5.2 -lITKLabelMap-5.2 -litkvnl-5.2 -litkvnl_algo-5.2 #lITKTransformFactory-5.2
+INCLUDEPATH +=/usr/include/ITK-5.2
 
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
