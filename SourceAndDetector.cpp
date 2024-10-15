@@ -19,6 +19,7 @@ SourceAndDetector::SourceAndDetector(QWidget *parent)
     ui->lineEdit_XEnergy->setEnabled(false);
     ui->lineEdit_energySpectrum->setEnabled(false);
     ui->pushButton_energySpectrum->setEnabled(false);
+    ui->lineEdit_opticalMag->setDisabled(false);
 
     MaterialsList();
     ui->comboBox_detectorMaterial->addItems(m_materialsList);
@@ -33,14 +34,24 @@ SourceAndDetector::~SourceAndDetector()
 void SourceAndDetector::on_radioButton_parBeam_toggled(bool checked)
 {
     m_parBeam = checked;
+    ui->lineEdit_opticalMag->setEnabled(checked);
 }
 
+double SourceAndDetector::getOpticalMag()
+{
+    if (ui->lineEdit_opticalMag->text().isEmpty()){
+        return 1;
+        QMessageBox::warning(this, "WARNING", "The optical zoom has been set to 1 in the parallel beam mode. Please insert the correct optical zoom.");
+
+    } else {
+        return (ui->lineEdit_opticalMag->text().toDouble());
+    }
+}
 
 void SourceAndDetector::on_radioButton_coneBeam_toggled(bool checked)
 {
     m_coneBeam = checked;
 }
-
 
 void SourceAndDetector::on_radioButton_Monochrom_toggled(bool checked)
 {
@@ -48,26 +59,12 @@ void SourceAndDetector::on_radioButton_Monochrom_toggled(bool checked)
         m_monochrome = checked;
 }
 
-
 void SourceAndDetector::on_radioButton_Polychrom_toggled(bool checked)
 {
     ui->lineEdit_energySpectrum->setEnabled(checked);
     ui->pushButton_energySpectrum->setEnabled(checked);
     m_polychrome = checked;
 }
-
-// double SourceAndDetector::getXrayEnergy()
-// {
-//     if (!(ui->lineEdit_XEnergy->text().isEmpty())){
-
-//         return (ui->lineEdit_XEnergy->text().toDouble());
-
-//     } else {
-
-//         QMessageBox::warning(this, "ERROR", "Please insert the X-ray energy.");
-//         return 0;
-//     }
-// }
 
 void SourceAndDetector::getXrayEnergy(std::vector<double>& energyVector, std::vector<double>& spectrumVector)
 {
@@ -197,8 +194,10 @@ std::vector<double> SourceAndDetector::getWaveNumber(std::vector<double>& energy
 void SourceAndDetector::Meshgrid(std::vector<std::vector<double>>& X, std::vector<std::vector<double>>& Y, int& numPixels, double& pixelSize)
 {
     // Resize X and Y to be n x n matrices
-    X.resize(numPixels, std::vector<double>(numPixels, 0.0));
-    Y.resize(numPixels, std::vector<double>(numPixels, 0.0));
+    X.clear();
+    Y.clear();
+    X.assign(numPixels, std::vector<double>(numPixels, 0.0));
+    Y.assign(numPixels, std::vector<double>(numPixels, 0.0));
 
     // Fill X and Y coordinate matrices
     for (int i = 0; i < numPixels ; i++) {
@@ -211,7 +210,9 @@ void SourceAndDetector::Meshgrid(std::vector<std::vector<double>>& X, std::vecto
 
 void SourceAndDetector::DetectorCoordinates(std::vector<std::vector<double>>& X, std::vector<std::vector<double>>& Y, std::vector<std::vector<double>>& rsqr, int& numPixels)
 {
-    rsqr.resize(numPixels, std::vector<double>(numPixels, 0.0));
+    rsqr.clear();
+    rsqr.assign(numPixels, std::vector<double>(numPixels, 0.0));
+
     for (int i = 0 ; i < numPixels ; i++){
         for (int j = 0 ; j < numPixels ; j++){
             // r*r in m
@@ -225,3 +226,5 @@ void SourceAndDetector::DetectorCoordinates(std::vector<std::vector<double>>& X,
 // {
 
 // }
+
+

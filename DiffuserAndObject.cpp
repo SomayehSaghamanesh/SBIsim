@@ -1,12 +1,19 @@
 #include "DiffuserAndObject.h"
 #include "ui_DiffuserAndObject.h"
 #include "Materials.h"
+#include "itkImage.h"
+#include "itkImageFileReader.h"
+#include "itkImageRegionIterator.h"
+#include "itkResampleImageFilter.h"
+#include "itkAffineTransform.h"
+#include "itkLinearInterpolateImageFunction.h"
 
 #include <QMessageBox>
 #include <QDebug>
 #include <QFile>
 #include <QFileDialog>
 #include <algorithm>
+
 
 
 DiffuserAndObject::DiffuserAndObject(QWidget *parent)
@@ -26,7 +33,7 @@ DiffuserAndObject::DiffuserAndObject(QWidget *parent)
     ui->comboBox_BaseMaterial->addItems(m_materialsList);
     ui->comboBox_gritDensity->addItems(m_gritDensity);
 
-    // MagFactors();
+    ui->lineEdit_NumInterp->setText("1");
 
 }
 
@@ -74,9 +81,9 @@ QString DiffuserAndObject::getObjectName()
 
 void DiffuserAndObject::on_pushButton_VObject_clicked()
 {
-    QString filter = "Image Files (*.raw, *.img)";
-    QString vObject_filename = QFileDialog::getOpenFileName(this, "Select a file", QDir::homePath(), filter);
     ui->lineEdit_VObject->clear();
+    // QString filter = "Image Files (*.raw, *.img)";
+    QString vObject_filename = QFileDialog::getOpenFileName(this, "Select a file", QDir::homePath());
     ui->lineEdit_VObject->setText(vObject_filename);
 }
 
@@ -95,40 +102,130 @@ double DiffuserAndObject::getSphereDiameter()
     return (0.001*(ui->lineEdit_SDiameter->text().toDouble())); // [m]
 }
 
-QVector<QVector<QVector<float>>> DiffuserAndObject::getVirtualObject()
+double DiffuserAndObject::getVObjectMag()
 {
-    if (m_virtualObject){
-
-        QString vObject_filename = ui->lineEdit_VObject->text();
-        QFile VObjectFile(vObject_filename);
-        if (!VObjectFile.open(QFile::ReadOnly | QFile::Text)){// check exist instead of open
-            QMessageBox::warning(this, "ERROR", "Image file can NOT open");
-            return {};
-        }
-            // TODO
-        // QString line;
-        // float energy;
-        // float weight;
-        // QTextStream spectrumFile_in(&spectrumFile);
-        // while (spectrumFile_in.readLineInto(&line, 0)){
-        //     QStringList parts = line.split(' ', Qt::SkipEmptyParts);
-        //     if (parts.size() == 2) {
-        //         energy = parts[0].toFloat();
-        //         weight = parts[1].toFloat();
-        //         m_energyVector.push_back(energy);
-        //         m_SpectrumVector.push_back(weight);
-        //         qDebug() << "energy : " << energy << "\tweight : " << weight;
-        //     } else {
-        //         QMessageBox::warning(this, "ERROR", "Invalid file format.");
-        //         return;
-        //     }
-        VObjectFile.close();
-        return m_vObject;
+    if ( (m_virtualObject) && !(ui->lineEdit_vObjectMag->text().isEmpty()) ){
+       return (ui->lineEdit_vObjectMag->text().toDouble());
 
     } else {
-        QMessageBox::warning(this, "ERROR", "Virtual Object NOT found!");
+        QMessageBox::warning(this, "WARNING", "Please insert the virtual object magnification or it will be set to 1.");
+        return 1;
+    }
+}
+
+std::vector<std::vector<std::vector<float>>> DiffuserAndObject::getVirtualObject(const double& mag_vObject,
+                                                                const int& numPixels, const int& numPixelsZ, const double& PixelSizeObj)
+{
+    QString vObject_filename = ui->lineEdit_VObject->text();
+
+    if ( (m_virtualObject) && (QFile::exists(vObject_filename)) && (!(ui->lineEdit_VObject->text().isEmpty())) ){
+    } else {
+        QMessageBox::warning(this, "ERROR", "Virtual image file can NOT open");
         return {};
     }
+
+    std::vector<std::vector<std::vector<float>>> vObject(numPixels, std::vector<std::vector<float>>(numPixels, std::vector<float>(numPixelsZ)));
+
+    // image type
+    using ImageType = itk::Image<float, 3>;
+    using ReaderType =itk::ImageFileReader<ImageType>;
+    ReaderType::Pointer reader = ReaderType::New();
+
+    // set the file name
+    reader->SetFileName(vObject_filename.toStdString());
+    try{
+        reader->Update();
+    } catch (itk::ExceptionObject & err){
+        qDebug() << "Error reading the virtual image : " << err.what();
+        throw;
+    }
+    // get the image
+    ImageType::Pointer vImage = reader->GetOutput();
+
+    // resampler
+    using ResamplerFilterType = itk::ResampleImageFilter<ImageType, ImageType>;
+    ResamplerFilterType::Pointer resampleFilter = ResamplerFilterType::New();
+    // set the transform
+    using TransformType = itk::AffineTransform<double, 3>;
+    TransformType::Pointer transform = TransformType::New();
+    transform->SetIdentity();
+    resampleFilter->SetTransform(transform);
+    // set (linear) interpolator
+    using InterpolatorType = itk::LinearInterpolateImageFunction<ImageType, double>;
+    InterpolatorType::Pointer interpolator = InterpolatorType::New();
+    resampleFilter->SetInterpolator(interpolator);
+    // set the output spacing
+    ImageType::SpacingType inputSpacing = (vImage->GetSpacing())/mag_vObject; // the old spacing on the object after demagnification
+    ImageType::SpacingType outputSpacing; // real pixel size on the object phantom
+    outputSpacing[0] = PixelSizeObj;
+    outputSpacing[1] = PixelSizeObj;
+    outputSpacing[2] = PixelSizeObj;
+    resampleFilter->SetOutputSpacing(outputSpacing);
+    // set the size of output image
+    ImageType::RegionType region = vImage->GetLargestPossibleRegion();
+    ImageType::SizeType inputSize = region.GetSize();
+    ImageType::SizeType outputSize;
+    outputSize[0] = static_cast<unsigned int>(inputSize[0] * (inputSpacing[0]/outputSpacing[0]));
+    outputSize[1] = static_cast<unsigned int>(inputSize[1] * (inputSpacing[1]/outputSpacing[1]));
+    outputSize[2] = static_cast<unsigned int>(inputSize[2] * (inputSpacing[2]/outputSpacing[2]));
+    resampleFilter->SetSize(outputSize);
+    // set the origin and direction as the same as the input image
+    resampleFilter->SetOutputOrigin(vImage->GetOrigin());
+    resampleFilter->SetOutputDirection(vImage->GetDirection());
+    // set input image to the resampler
+    resampleFilter->SetInput(vImage);
+    // generate the resampled image
+    resampleFilter->Update();
+    // get final resampled image
+    ImageType::Pointer resampledImage = resampleFilter->GetOutput();
+    // check if axes order is correct
+    bool reverseAxes = false;
+
+    // calculate cropping offsets
+    ImageType::RegionType finalRegion = resampledImage->GetLargestPossibleRegion();
+    ImageType::SizeType finalSize = finalRegion.GetSize();
+    int offsetX = (finalSize[0] - numPixels)/2;
+    int offsetY = (finalSize[1] - numPixels)/2;
+    int offsetZ = (finalSize[2] - numPixels)/2;
+    //
+    offsetX = std::max(0, offsetX);
+    offsetY = std::max(0, offsetY);
+    offsetZ = std::max(0, offsetZ);
+
+    // iterate through the final image
+    itk::ImageRegionIterator<ImageType> imageIter(resampledImage, finalRegion);
+    int xIndex = 0, yIndex = 0, zIndex = 0;
+
+    // Iterate over the cropped region and assign values to m_vObject
+    for (unsigned int z = offsetZ; z < std::min(static_cast<unsigned int>(finalSize[2]), static_cast<unsigned int>(offsetZ + numPixelsZ)); ++z) {
+        zIndex = z - offsetZ;
+        for (unsigned int y = offsetY; y < std::min(static_cast<unsigned int>(finalSize[1]), static_cast<unsigned int>(offsetY + numPixels)); ++y) {
+            yIndex = y - offsetY;
+            for (unsigned int x = offsetX; x < std::min(static_cast<unsigned int>(finalSize[0]), static_cast<unsigned int>(offsetX + numPixels)); ++x) {
+                xIndex = x - offsetX;
+
+                ImageType::IndexType index = {{x, y, z}};
+                float pixelValue = resampledImage->GetPixel(index);
+
+                if (reverseAxes){
+                    // store ZYX instead of XYZ
+                    vObject[zIndex][yIndex][xIndex] = pixelValue;
+
+                } else {
+                    vObject[xIndex][yIndex][zIndex] = pixelValue;
+                }
+            }
+        }
+    }
+
+    // while (!imageIter.IsAtEnd()){
+    //     ImageType::IndexType index = imageIter.GetIndex();
+    //     float pixelValue = imageIter.Get();
+    //     m_vObject[index[0]][index[1]][index[2]] = pixelValue;
+    //     ++imageIter;
+    // }
+
+    return vObject;
 }
 
 void DiffuserAndObject::MaterialsList()
@@ -154,7 +251,7 @@ int DiffuserAndObject::getNumMVSlices(const double& thickness, int& numVoxelsInZ
     // qDebug() << "voxel_size =" << pixelSize;
 
     if ((ui->comboBox_numMVSlices->currentText()) == "large"){
-        QMessageBox::warning(this, "WARNING", "Single-voxel slices have been selected.");
+        // QMessageBox::warning(this, "WARNING", "Single-voxel slices have been selected.");
         numSlices = numVoxelsInZ;// 1 slice = 1 voxel
 
     } else if ((ui->comboBox_numMVSlices->currentText()) == "medium"){
@@ -219,7 +316,6 @@ double DiffuserAndObject::getDiffuserThickness()
         QMessageBox::warning(this, "ERROR", "Please insert a valid diffuser thickness (mm).");
         return 0;
     }
-
 }
 
 QString DiffuserAndObject::getGritDensity()

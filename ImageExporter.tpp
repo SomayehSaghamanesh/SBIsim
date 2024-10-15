@@ -2,9 +2,9 @@
 #include <iostream>
 #include <itkImageFileWriter.h>
 
+
 template <typename T>
 ImageExporter<T>::ImageExporter(size_t xSize, size_t ySize, size_t zSize) {
-
     typename ImageType3D::SizeType size;
     size[0] = xSize;
     size[1] = ySize;

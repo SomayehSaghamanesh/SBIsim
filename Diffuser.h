@@ -8,10 +8,12 @@ class Diffuser
 
 public:
 
-    Diffuser(const int numPixels, const int numDiffVoxelsZ, const double pixelDiff, DiffuserAndObject *diffuserAndObject, int& m_numGrits);
+    Diffuser(const int numPixels, const int numDiffVoxelsZ, const double pixelDiff, DiffuserAndObject *diffuserAndObject);
     ~Diffuser();
 
     void CreateDiffuser(std::vector<std::vector<std::vector<int>>>& diffuser);
+    int m_numGrits;
+
 
 private:
 
@@ -21,8 +23,6 @@ private:
     double m_pixelDiff;
     DiffuserAndObject* m_diffuserAndObject;
     std::array<int, 3> m_diffuserSize;
-    int m_numGrits{0};
-
 
     int CalculateNumGrits();
     void getRandomValue(std::vector<int>& myVec, int lower_indx, int upper_indx);

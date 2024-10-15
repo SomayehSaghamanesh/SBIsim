@@ -15,6 +15,7 @@ public:
     explicit SourceAndDetector(QWidget *parent = nullptr);
     ~SourceAndDetector();
 
+    double getOpticalMag();
     void getXrayEnergy(std::vector<double>& energyVector, std::vector<double>& spectrumVector);
     double getPixelSizeMM();
     double getDetectorThickness();

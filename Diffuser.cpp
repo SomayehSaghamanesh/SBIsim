@@ -1,12 +1,12 @@
 #include "Diffuser.h"
-#include "Materials.h"
 
 #include <vector>
 #include <random>
 #include <algorithm>
 #include <cmath>
 
-Diffuser::Diffuser(const int numPixels, const int numDiffVoxelsZ, const double pixelDiff, DiffuserAndObject *diffuserAndObject, int& m_numGrits)
+
+Diffuser::Diffuser(const int numPixels, const int numDiffVoxelsZ, const double pixelDiff, DiffuserAndObject *diffuserAndObject)
     : m_numPixels(numPixels)
     , m_numDiffVoxelsZ(numDiffVoxelsZ)
     , m_pixelDiff(pixelDiff)
@@ -27,13 +27,13 @@ int Diffuser::CalculateNumGrits()
     double gritVol = 4/3*pi*std::pow(((m_diffuserAndObject->getGritSize())/2), 3);
 
     if (m_diffuserAndObject->getGritDensity() =="Dense") {
-        return (round(baseVol/gritVol*0.7));
-
-    } else if (m_diffuserAndObject->getGritDensity() == "Standard") {
         return (round(baseVol/gritVol*0.5));
 
+    } else if (m_diffuserAndObject->getGritDensity() == "Standard") {
+        return (round(baseVol/gritVol*0.2));
+
     } else if (m_diffuserAndObject->getGritDensity() == "Sparse") {
-        return (round(baseVol/gritVol*0.3));
+        return (round(baseVol/gritVol*0.1));
     } else {
         return 1;
     }
@@ -44,12 +44,12 @@ void Diffuser::getRandomValue(std::vector<int>& myVec, int lower_size, int upper
 {
     std::random_device rd;  // Obtain a random number from hardware
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<> gritDis(lower_size, upper_size);
+    std::uniform_int_distribution<> gritDis(lower_size, upper_size);
 
     for (int i = 0 ; i < m_numGrits ; i++)
     {
         myVec.push_back(gritDis(gen));
-        // qDebug() << "c: " << myVec[i];
+        // std::cout << "c: " << myVec[i] << "\n";
     }
 }
 
@@ -80,12 +80,15 @@ void Diffuser::DistributeGrits(std::vector<int>& cx, std::vector<int>& cy, std::
         gritRadiusIndx = std::clamp(gritRadiusIndx, 1, maxGritRadiusIndx);
         r.push_back(gritRadiusIndx);
 
-        // qDebug() << "r= " << gritRadiusIndx;
+        // std::cout << "r= " << gritRadiusIndx << "\n";
     }
 
-    getRandomValue(cx, maxGritRadiusIndx, m_diffuserSize[0]-maxGritRadiusIndx);
-    getRandomValue(cy, maxGritRadiusIndx, m_diffuserSize[1]-maxGritRadiusIndx);
-    getRandomValue(cz, maxGritRadiusIndx, m_diffuserSize[2]-maxGritRadiusIndx);
+    getRandomValue(cx, maxGritRadiusIndx-1, std::max(m_diffuserSize[0]-maxGritRadiusIndx, maxGritRadiusIndx-1));
+    getRandomValue(cy, maxGritRadiusIndx-1, std::max(m_diffuserSize[1]-maxGritRadiusIndx, maxGritRadiusIndx-1));
+    getRandomValue(cz, maxGritRadiusIndx-1, std::max(m_diffuserSize[2]-maxGritRadiusIndx, maxGritRadiusIndx-1));
+    // getRandomValue(cx, 0, m_diffuserSize[0]-1);
+    // getRandomValue(cy, 0, m_diffuserSize[1]-1);
+    // getRandomValue(cz, 0, m_diffuserSize[2]-1);
 }
 
 void Diffuser::CreateDiffuser(std::vector<std::vector<std::vector<int>>>& diffuser)
@@ -95,7 +98,7 @@ void Diffuser::CreateDiffuser(std::vector<std::vector<std::vector<int>>>& diffus
 
     DistributeGrits(cx, cy, cz, r);
 
-    for (size_t s = 0; s < cx.size(); ++s) {
+    for (size_t s = 0; s < cx.size(); s++) {
         r_squared = r[s] * r[s]; // Calculate squared radius
 
         // bounding box for the current sphere

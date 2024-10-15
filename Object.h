@@ -10,6 +10,7 @@ public:
     ~Object();
 
     void CreateObject(std::vector<std::vector<std::vector<int>>>& object);
+    void CreateObject(std::vector<std::vector<std::vector<float>>>& object); // overloaded
 
 private:
 
@@ -19,7 +20,7 @@ private:
 
     void CreateSphere(std::vector<std::vector<std::vector<int>>>& object);
     void CreateCylinder(std::vector<std::vector<std::vector<int>>>& object);
-    void CreateVirtualObject();
+
 
 
 };

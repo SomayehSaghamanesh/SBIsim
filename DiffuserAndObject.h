@@ -2,7 +2,6 @@
 #define DIFFUSERANDOBJECT_H
 
 #include <QWidget>
-#include <QVector>
 
 namespace Ui {
 class DiffuserAndObject;
@@ -20,7 +19,7 @@ class DiffuserAndObject : public QWidget
         double getCylinderHeight();
         double getSphereDiameter();
         QString getObjectName();
-        QVector<QVector<QVector<float>>> getVirtualObject();
+        std::vector<std::vector<std::vector<float>>> getVirtualObject(const double& mag_vObject, const int& numPixels, const int& numPixelsZ, const double& PixelSizeObj);
         QString getObjectMaterial();
         int getNumMVSlices(const double& thickness, int& numVoxelsInZ, const double& pixelSize, const double& magnification);
         int getNumInterpolations();
@@ -30,8 +29,11 @@ class DiffuserAndObject : public QWidget
         double getObjectThickness();
         double getDiffuserThickness();
         QString getGritDensity();
+        double getVObjectMag();
 
         bool m_cylinder{false}, m_sphere{false}, m_virtualObject{false};
+
+        double m_vObjectMag{1};
 
 
     public slots:
@@ -49,10 +51,9 @@ class DiffuserAndObject : public QWidget
 
         Ui::DiffuserAndObject *ui;
 
-        QVector<QVector<QVector<float>>> m_vObject;
         QStringList m_materialsList = {};
-        QStringList m_num_MVS_slices = {"few", "medium", "large"};
-        QStringList m_gritDensity = {"Dense", "Standard", "Sparse"};
+        QStringList m_num_MVS_slices = {"large", "medium", "few"};
+        QStringList m_gritDensity = {"Sparse", "Standard", "Dense"};
 
 
     // protected :

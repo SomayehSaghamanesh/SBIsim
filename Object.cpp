@@ -22,13 +22,16 @@ void Object::CreateObject(std::vector<std::vector<std::vector<int>>>& object)
     } else if (m_diffuserAndObject->getObjectName() == "Sphere"){
         CreateSphere(object);
 
-    } else if (m_diffuserAndObject->getObjectName() == "VirtualObject"){
-        CreateVirtualObject();
-
     } else {
-        std::runtime_error("ERROR: Please select a valid object.");
+        std::runtime_error("ERROR: Please select either sphere or cylinder object.");
         return;
     }
+}
+
+void Object::CreateObject(std::vector<std::vector<std::vector<float>>>& object)
+{
+    double mag_vObject = m_diffuserAndObject->getVObjectMag();
+    object = m_diffuserAndObject->getVirtualObject(mag_vObject, m_numPixels, m_numObjVoxelsZ, m_pixelObj);
 }
 
 void Object::CreateSphere(std::vector<std::vector<std::vector<int>>>& object)
@@ -87,7 +90,8 @@ void Object::CreateCylinder(std::vector<std::vector<std::vector<int>>>& object)
     }
 }
 
-void Object::CreateVirtualObject()
-{
-
-}
+// void Object::CreateVirtualObject(std::vector<std::vector<std::vector<float>>>& object)
+// {
+//     double mag_vObject = m_diffuserAndObject->getVObjectMag();
+//     object = m_diffuserAndObject->getVirtualObject(mag_vObject, m_numPixels, m_numObjVoxelsZ, m_pixelObj);
+// }

@@ -24,6 +24,8 @@ public:
 private:
     Ui::Simulation *ui;
 
+    int bg = 0, fg = 0;
+
     SourceAndDetector *tab_source_detector;
     DiffuserAndObject *tab_diffuser_object;
     Setup *tab_setup;
@@ -36,7 +38,7 @@ private:
     QVector<QString> m_matList{"", "", "", ""};
     QVector<Materials::MaterialProperties> m_physList = {{0, 0, "", ""}}; // it will have four elements at end: the order is detector, diffuser, base, and object
 
-    double m_SOD{0}, m_SdD{0}, m_SDD{0}, m_pixelSize{0};
+    double m_SOD{0}, m_SdD{0}, m_SDD{0}, m_pixelSize{0}, m_opticalMag{1};
     int m_numProj{1}, m_numObjVoxelsZ{1}, m_numDiffVoxelsZ{1}, m_numInterp{1}, m_numMVSlicesObj{1}, m_numMVSlicesDiff{1}, m_numPixels{0};
     double m_objThickness{0}, m_diffThickness{0};
     std::vector<double> m_M_obj{1}, m_M_diff{1}, m_fM_obj{1}, m_fM_diff{1};
@@ -45,7 +47,7 @@ private:
     std::vector<std::vector<double>> m_X, m_Y, m_rsqr;
 
     // Images
-    std::vector<std::vector<double>> m_I_bg, m_I_fg, m_phi_bg, m_phi_fg;
+    std::vector<std::vector<float>> m_I_bg, m_I_fg, m_phi_bg, m_phi_fg;
 
     // tempoarary loop matrices
     std::vector<std::vector<double>> beta; // imaginary part of the complex refractive index
@@ -73,7 +75,7 @@ private:
                                const double& sourceToSubjectDist, const std::vector<double>& Mag, const int& sliceNum, const int& sliceStep, const int& m_numInterp);
 
     void PropagateInMaterial(std::vector<std::vector<double>>& I, std::vector<std::vector<double>>& phi, const std::vector<std::vector<std::vector<int>>>& subject,
-                             const double& thickness, const double& sourceToSubjectDist, const std::vector<double>& Mag,
+                             const double& sliceThickness, const double& sourceToSubjectDist, const std::vector<double>& Mag,
                              const std::vector<double>& fresnelMag,const int& numMVSlices, const int& numVoxelSlicesInZ,
                              const Materials::refractiveIndex& refrIndx1, const Materials::refractiveIndex& refrIndx2, const size_t& energyIndx);
 
@@ -83,6 +85,7 @@ private:
     void ConeBeamSimulation();
     void ParBeamSimulation();
     void InitiateSimulation();
+    void WriteToImage(const std::vector<std::vector<float>>& image, const std::string& image_name, const int& proj);
 
 };
 

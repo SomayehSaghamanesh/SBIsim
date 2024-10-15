@@ -10,6 +10,7 @@ template <typename T>
 class ImageExporter {
 
 public:
+
     using ImageType3D = itk::Image<T, 3>;
     using ImageType2D = itk::Image<T, 2>;
 
