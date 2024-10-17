@@ -298,29 +298,29 @@ void Simulation::Laplacian2D(const std::vector<std::vector<double>>& matrix, std
     int cy = Ny / 2;
     int cz = Nz / 2;
 
-    // Iterate through each point in the 3D object
-    for (int x = 0; x < Nx; ++x) {
-        for (int y = 0; y < Ny; ++y) {
-            for (int z = 0; z < Nz; ++z) {
+    // Iterate through each point in the 3D rotated object -> backward mapping
+    for (int xr = 0; xr < Nx; ++xr) {
+        for (int yr = 0; yr < Ny; ++yr) {
+            for (int zr = 0; zr < Nz; ++zr) {
 
                 // Translate point to the origin (center of object)
-                int xt = x - cx;
-                int yt = y - cy;
-                int zt = z - cz;
+                int xt = xr - cx;
+                int yt = yr - cy;
+                int zt = zr - cz;
 
                 // Apply the rotation matrix (only Y-axis rotation here)
-                double x_new = cosTheta * xt + sinTheta * zt;
-                double y_new = yt;  // No change in y for Y-axis rotation
-                double z_new = -sinTheta * xt + cosTheta * zt;
+                double xo = cosTheta * xt - sinTheta * zt;
+                double yo = yt;  // No change in y for Y-axis rotation
+                double zo = sinTheta * xt + cosTheta * zt;
 
                 // Translate back to the original coordinate system
-                int xr = std::round(x_new + cx);
-                int yr = std::round(y_new + cy);
-                int zr = std::round(z_new + cz);
+                int xo_int = std::round(xo + cx);
+                int yo_int = std::round(yo + cy);
+                int zo_int = std::round(zo + cz);
 
                 // Check if the new coordinates are within bounds, if so, assign the value
-                if (xr >= 0 && xr < Nx && yr >= 0 && yr < Ny && zr >= 0 && zr < Nz) {
-                    rotatedObject[xr][yr][zr] = object[x][y][z];
+                if (xo_int >= 0 && xo_int < Nx && yo_int >= 0 && yo_int < Ny && zo_int >= 0 && zo_int < Nz) {
+                    rotatedObject[xr][yr][zr] = object[xo_int][yo_int][zo_int];
                 }
             }
         }
@@ -442,8 +442,17 @@ void Simulation::PropagateInMaterial(std::vector<std::vector<double>>& I, std::v
                                      const int& numVoxelSlicesInZ, const Materials::refractiveIndex& refrIndx1, const Materials::refractiveIndex& refrIndx2, const size_t& energyIndx)
 {
     // declarations for each slice
-    double coneBeamSliceThickness = 0; // cone-beam slice thickness at plane
+    double coneBeamSliceThickness = 0, coneBeamSliceThickness2 = 0; // cone-beam slice thickness
     int sliceStep = numVoxelSlicesInZ/numMVSlices;
+
+    // tempoarary loop matrices
+    std::vector<std::vector<double>> beta; // imaginary part of the complex refractive index
+    std::vector<std::vector<double>> delta; // real part of the complex refractive index
+    std::vector<std::vector<double>> Gx_I; // intensity gradient along x : here vertical side
+    std::vector<std::vector<double>> Gy_I; // intensity gradient along y : here horizontal side
+    std::vector<std::vector<double>> Gx_phi; // phase gradient along x : here vertical side
+    std::vector<std::vector<double>> Gy_phi; // phase gradient along y : here horizontal side
+    std::vector<std::vector<double>> L_phi; // 2D Laplacian of phi
 
     // create magnified thickness mesh and interpolate refrative index in sub-pixel resolution
     for (int s = 0 ; s < numVoxelSlicesInZ ; s+=sliceStep)
@@ -476,40 +485,44 @@ void Simulation::PropagateInMaterial(std::vector<std::vector<double>>& I, std::v
             }
         } else {
         // update cone-beam magnified slice thickness and then I and phi
-        for (int i = 0 ; i < m_numPixels ; i++){
-            for (int j = 0 ; j < m_numPixels ; j++){
-                coneBeamSliceThickness = std::sqrt( m_rsqr[i][j]/(std::pow(Mag[s+sliceStep], 2)) + std::pow((sourceToSubjectDist + (s+sliceStep)*m_pixelSize/Mag[0]), 2) )
-                                         - std::sqrt( m_rsqr[i][j]/(std::pow(Mag[s], 2)) + std::pow((sourceToSubjectDist + (s)*m_pixelSize/Mag[0]), 2) );
+            for (int i = 0 ; i < m_numPixels ; i++){
+                for (int j = 0 ; j < m_numPixels ; j++){
+                    coneBeamSliceThickness = std::sqrt( m_rsqr[i][j]/(std::pow(Mag[s+sliceStep], 2)) + std::pow((sourceToSubjectDist + (s+sliceStep)*m_pixelSize/Mag[0]), 2) )
+                                             - std::sqrt( m_rsqr[i][j]/(std::pow(Mag[s], 2)) + std::pow((sourceToSubjectDist + (s)*m_pixelSize/Mag[0]), 2) );
+                    // OR
+                    // coneBeamSliceThickness2 = std::sqrt(std::pow( (std::sqrt(m_rsqr[i][j])/(std::pow(Mag[s+sliceStep], 2))) - (std::sqrt(m_rsqr[i][j])/(std::pow(Mag[s], 2))) , 2) + (std::pow(sliceThickness*sliceStep, 2)));
 
-                I[i][j] = (1/fresnelMag[s+sliceStep])*( I[i][j] - (m_pixelSize/Mag[0]/fresnelMag[s+sliceStep]/m_waveNumber[energyIndx]) *
-                                         (Gx_I[i][j] * Gx_phi[i][j] + Gy_I[i][j] * Gy_phi[i][j] + 4 * I[i][j] * L_phi[i][j]) ) *
-                            (std::exp(-2 * m_waveNumber[energyIndx] * beta[i][j] * coneBeamSliceThickness));
+                    I[i][j] = (1/fresnelMag[s+sliceStep])*( I[i][j] - (m_pixelSize/Mag[0]/fresnelMag[s+sliceStep]/m_waveNumber[energyIndx]) *
+                                             (Gx_I[i][j] * Gx_phi[i][j] + Gy_I[i][j] * Gy_phi[i][j] + 4 * I[i][j] * L_phi[i][j]) ) *
+                                (std::exp(-2 * m_waveNumber[energyIndx] * beta[i][j] * coneBeamSliceThickness));
 
-                phi[i][j] = phi[i][j] - (m_waveNumber[energyIndx] * delta[i][j] * coneBeamSliceThickness);
-                if (coneBeamSliceThickness <= 0){
-                    qDebug() << "******* CBSliceThickness is <= 0 at (" << i << "," << j << ")" << " *******";
+                    phi[i][j] = phi[i][j] - (m_waveNumber[energyIndx] * delta[i][j] * coneBeamSliceThickness);
+                    if (coneBeamSliceThickness <= 0){
+                        qDebug() << "******* CBSliceThickness is <= 0 at (" << i << "," << j << ")" << " *******";
+                    }
+
+                    // if ( I[i][j] < 0 ){
+                    //     I[i][j] = std::abs((I[i-1][j] + I[i+1][j] + I[i][j-1] + I[i][j+1])/4);
+                    //     // qDebug() << " ++++++ s=" << s << " ++++++";
+                    //     // cc++;
+                    //     // qDebug() << "I(" << i << "," << j << ")=" << I[i][j] << ", phi(" << i << "," << j << ")=" << phi[i][j];
+                    //     // qDebug() << "coneBeamSliceThickness=" << coneBeamSliceThickness;
+                    //     // qDebug() << "(i, j)=(" << i << "," << j << ") -> beta[i][j]=" << beta[i][j] << " ; delta[i][j]=" << delta[i][j];
+                    //     // qDebug() << "GxI = " << Gx_I[i][j] << ", GyI = " << Gy_I[i][j] << ", Gxphi = " << Gx_phi[i][j] << ", Gyphi = " << Gy_phi[i][j] << ", Lphi = " << L_phi[j][j];
+                    //     // qDebug() << "(I-a*b)*c, a->" << (m_pixelSize/Mag[0]/fresnelMag[s+sliceStep]/m_waveNumber[energyIndx]);
+                    //     // qDebug() << "(I-a*b)*c, b->" << (Gx_I[i][j] * Gx_phi[i][j] + Gy_I[i][j] * Gy_phi[i][j] + 4 * I[i][j] * L_phi[i][j]);
+                    //     // qDebug() << "(I-a*b)*c, c->" << std::exp(-2 * m_waveNumber[energyIndx] * beta[i][j] * coneBeamSliceThickness);
+                    //     // qDebug() << "phi-d, d->" << m_waveNumber[energyIndx] * delta[i][j] * coneBeamSliceThickness;
+                    //     // exit(1);
+                    // }
                 }
-
-                // if ( I[i][j] < 0 ){
-                //     I[i][j] = std::abs((I[i-1][j] + I[i+1][j] + I[i][j-1] + I[i][j+1])/4);
-                //     // qDebug() << " ++++++ s=" << s << " ++++++";
-                //     // cc++;
-                //     // qDebug() << "I(" << i << "," << j << ")=" << I[i][j] << ", phi(" << i << "," << j << ")=" << phi[i][j];
-                //     // qDebug() << "coneBeamSliceThickness=" << coneBeamSliceThickness;
-                //     // qDebug() << "(i, j)=(" << i << "," << j << ") -> beta[i][j]=" << beta[i][j] << " ; delta[i][j]=" << delta[i][j];
-                //     // qDebug() << "GxI = " << Gx_I[i][j] << ", GyI = " << Gy_I[i][j] << ", Gxphi = " << Gx_phi[i][j] << ", Gyphi = " << Gy_phi[i][j] << ", Lphi = " << L_phi[j][j];
-                //     // qDebug() << "(I-a*b)*c, a->" << (m_pixelSize/Mag[0]/fresnelMag[s+sliceStep]/m_waveNumber[energyIndx]);
-                //     // qDebug() << "(I-a*b)*c, b->" << (Gx_I[i][j] * Gx_phi[i][j] + Gy_I[i][j] * Gy_phi[i][j] + 4 * I[i][j] * L_phi[i][j]);
-                //     // qDebug() << "(I-a*b)*c, c->" << std::exp(-2 * m_waveNumber[energyIndx] * beta[i][j] * coneBeamSliceThickness);
-                //     // qDebug() << "phi-d, d->" << m_waveNumber[energyIndx] * delta[i][j] * coneBeamSliceThickness;
-                //     // exit(1);
-                // }
             }
         }
+        qDebug() << "coneBeamSliceThickness=" << coneBeamSliceThickness << "; coneBeamSliceThickness2=" << coneBeamSliceThickness2;
     }
-}
 
 }
+
 
 void Simulation::PropagateInFreeSpace(std::vector<std::vector<double>>& I, std::vector<std::vector<double>>& phi, const double& thickness1, const double& dist1, const double& dist2,
                                       const double& mag2, const double& mag1, const size_t& energyIndx, const bool isLastPropagation)
@@ -522,11 +535,12 @@ void Simulation::PropagateInFreeSpace(std::vector<std::vector<double>>& I, std::
     double energyWeight, detectorResponse = 0;
     double propagDist = 0;
 
-    Gx_I.assign(m_numPixels, std::vector<double>(m_numPixels, 0.000000000000000)); // intensity gradient along x : here vertical side
-    Gy_I.assign(m_numPixels, std::vector<double>(m_numPixels, 0.000000000000000)); // intensity gradient along y : here horizontal side
-    Gx_phi.assign(m_numPixels, std::vector<double>(m_numPixels, 0.000000000000000)); // phase gradient along x : here vertical side
-    Gy_phi.assign(m_numPixels, std::vector<double>(m_numPixels, 0.000000000000000)); // phase gradient along y : here horizontal side
-    L_phi.assign(m_numPixels, std::vector<double>(m_numPixels, 0.000000000000000)); // 2D Laplacian of phi
+    // tempoarary loop matrices
+    std::vector<std::vector<double>> Gx_I(m_numPixels, std::vector<double>(m_numPixels, 0.000000000000000)); // intensity gradient along x : here vertical side
+    std::vector<std::vector<double>> Gy_I(m_numPixels, std::vector<double>(m_numPixels, 0.000000000000000));  // intensity gradient along y : here horizontal side
+    std::vector<std::vector<double>> Gx_phi(m_numPixels, std::vector<double>(m_numPixels, 0.000000000000000)); // phase gradient along x : here vertical side
+    std::vector<std::vector<double>> Gy_phi(m_numPixels, std::vector<double>(m_numPixels, 0.000000000000000)); // phase gradient along y : here horizontal side
+    std::vector<std::vector<double>> L_phi(m_numPixels, std::vector<double>(m_numPixels, 0.000000000000000)); // 2D Laplacian of phi
 
     Gradient2D(I, Gx_I, Gy_I, m_pixelSize/mag1);
     Gradient2D(phi, Gx_phi, Gy_phi, m_pixelSize/mag1);
@@ -535,7 +549,7 @@ void Simulation::PropagateInFreeSpace(std::vector<std::vector<double>>& I, std::
     if (isLastPropagation){
         energyWeight = m_spectrumVector[energyIndx];
         detectorResponse = m_detEnergyResponse[energyIndx];
-        qDebug() << "It is the last propagation";
+        qDebug() << "It is the last propagation.\n\n";
     } else {
         energyWeight = 1;
         detectorResponse = 1;
@@ -563,28 +577,26 @@ void Simulation::PropagateInFreeSpace(std::vector<std::vector<double>>& I, std::
             }
         }
     }
-
 }
 
 void Simulation::ConeBeamSimulation()
 {
-    beta.clear(); delta.clear();
-    Gx_I.clear(); Gy_I.clear(); Gx_phi.clear(); Gy_phi.clear(); L_phi.clear();
-    m_I_bg.clear(); m_phi_bg.clear(); m_I_fg.clear(); m_phi_fg.clear();
-
     setParams(); // set all parameters
 
-    // temporary matrices declaration
-    std::vector<std::vector<double>> I_bg(m_numPixels, std::vector<double>(m_numPixels, 1.0));
-    std::vector<std::vector<double>> phi_bg(m_numPixels, std::vector<double>(m_numPixels, 0.0));
-    std::vector<std::vector<double>> I_fg(m_numPixels, std::vector<double>(m_numPixels, 1.0));
-    std::vector<std::vector<double>> phi_fg(m_numPixels, std::vector<double>(m_numPixels, 0.0));
+    // Images
+    std::vector<std::vector<float>> I_bg(m_numPixels, std::vector<float>(m_numPixels, 0.0));
+    std::vector<std::vector<float>> phi_bg(m_numPixels, std::vector<float>(m_numPixels, 0.0));
+    std::vector<std::vector<std::vector<float>>> I_fg(m_numPixels, std::vector<std::vector<float>>(m_numPixels, std::vector<float>(m_numProj, 0.0)));
+    std::vector<std::vector<std::vector<float>>> phi_fg(m_numPixels, std::vector<std::vector<float>>(m_numPixels, std::vector<float>(m_numProj, 0.0)));
 
-    // object declarations
+    // temporary matrices
+    std::vector<std::vector<double>> I_bg_t, phi_bg_t, I_fg_t, phi_fg_t;
+
+    // create object
     std::unique_ptr<Object> object = std::make_unique<Object>(m_numObjVoxelsZ, m_numPixels, m_pixelSize/m_M_obj[0], tab_diffuser_object);
     std::vector<std::vector<std::vector<int>>> obj(m_numPixels, std::vector<std::vector<int>>(m_numPixels, std::vector<int>(m_numObjVoxelsZ, 0)));
     std::vector<Materials::refractiveIndex> n_obj = mat->RefractiveIndex(m_energyVector, m_physList[3].formula, m_physList[3].density);
-    // create object
+
     if (tab_diffuser_object->m_virtualObject){
         obj.clear();
         obj.shrink_to_fit();
@@ -592,9 +604,10 @@ void Simulation::ConeBeamSimulation()
         object->CreateObject(vObj);
     } else {
         object->CreateObject(obj);
+        // obj = object->rotate3DObjectZ(obj); // 45 deg rotated
     }
 
-    // diffuser declarations
+    // create diffuser
     std::vector<std::vector<std::vector<int>>> diff(m_numPixels, std::vector<std::vector<int>>(m_numPixels, std::vector<int>(m_numDiffVoxelsZ, 2)));
     std::vector<Materials::refractiveIndex> n_diff = mat->RefractiveIndex(m_energyVector, m_physList[1].formula, m_physList[1].density);
     std::vector<Materials::refractiveIndex> n_base = mat->RefractiveIndex(m_energyVector, m_physList[2].formula, m_physList[2].density);
@@ -602,46 +615,54 @@ void Simulation::ConeBeamSimulation()
     diffuser->CreateDiffuser(diff); // create diffuser
     qDebug() << "numGrits=" << diffuser->m_numGrits;
 
-    // loop over projections
+
+    // ********************************************
+    // ****  Simulate image over projections  *****
+    // ********************************************
     for (int proj = 0 ; proj < m_numProj ; proj++)
     {
-        // reset intensity distribution's amplitude and phase images for each projection
-        m_I_bg.assign(m_numPixels, std::vector<float>(m_numPixels, 0.0));
-        m_phi_bg.assign(m_numPixels, std::vector<float>(m_numPixels, 0.0));
-        m_I_fg.assign(m_numPixels, std::vector<float>(m_numPixels, 0.0));
-        m_phi_fg.assign(m_numPixels, std::vector<float>(m_numPixels, 0.0));
-
-        // loop on all X-ray energies
+        qDebug() << "========== proj = " << proj+1 << " ==========\n";
+        // iterate over all X-ray energies
         for (size_t e = 0 ; e < m_energyVector.size() ; e++)
         {
-            // reference image (only with diffuser)
-            qDebug() << "only diff-> propagate in diff :\n";
-            PropagateInMaterial(I_bg, phi_bg, diff, m_diffThickness, m_SdD, m_M_diff, m_fM_diff, m_numMVSlicesDiff, m_numDiffVoxelsZ, n_diff[e], n_base[e], e); // propagate through the diffuser
-            qDebug() << "\npropagate from diff to det:\n";
-            PropagateInFreeSpace(I_bg, phi_bg, m_diffThickness, m_SdD, m_SDD, 1, m_M_diff[m_numDiffVoxelsZ], e, true); // propagate from diffuser to detector
+            qDebug() << "beta_obj=" << n_obj[e].imaginaryPart << "; delta_obj=" << n_obj[e].realPart << "\n";
+            // reset for the next energy bin
+            I_fg_t.assign(m_numPixels, std::vector<double>(m_numPixels, 1.0));
+            phi_fg_t.assign(m_numPixels, std::vector<double>(m_numPixels, 0.0));
 
-            // image (diffuser + object)
-            if (m_SOD < m_SdD){ // object is before diffuser
+            // reference (background) image (only with diffuser) : only for one projection is calculated
+            if (proj == 0){
+                I_bg_t.assign(m_numPixels, std::vector<double>(m_numPixels, 1.0));
+                phi_bg_t.assign(m_numPixels, std::vector<double>(m_numPixels, 0.0));
 
-                qDebug() << "with diff&obj->propagate in object:\n";
-                PropagateInMaterial(I_fg, phi_fg, obj, m_objThickness, m_SOD, m_M_obj, m_fM_obj, m_numMVSlicesObj, m_numObjVoxelsZ, n_obj[e], n_obj[e], e); // propagate through the object
-                qDebug() << "\npropagate from obj to diff:\n";
-                PropagateInFreeSpace(I_fg, phi_fg, m_objThickness, m_SOD, m_SdD, m_M_diff[0], m_M_obj[m_numObjVoxelsZ], e, false); // propagate from object to diffuser (or from diffuser to object)
-                qDebug() << "\npropagate in diff:\n";
-                PropagateInMaterial(I_fg, phi_fg, diff, m_diffThickness, m_SdD, m_M_diff, m_fM_diff,m_numMVSlicesDiff, m_numDiffVoxelsZ, n_diff[e], n_base[e], e); // propagate through the diffuser
-                qDebug() << "\npropagate from diff to det:\n";
-                PropagateInFreeSpace(I_fg, phi_fg, m_diffThickness, m_SdD, m_SDD, 1, m_M_diff[m_numDiffVoxelsZ], e, true); // propagate from diffuser to detector
+                qDebug() << "Background image : propagating in the diffuser ...\n";
+                PropagateInMaterial(I_bg_t, phi_bg_t, diff, m_diffThickness, m_SdD, m_M_diff, m_fM_diff, m_numMVSlicesDiff, m_numDiffVoxelsZ, n_diff[e], n_base[e], e); // propagate through the diffuser
+                qDebug() << "Background image : propagating from the diffuser to the detector ...\n";
+                PropagateInFreeSpace(I_bg_t, phi_bg_t, m_diffThickness, m_SdD, m_SDD, 1, m_M_diff[m_numDiffVoxelsZ], e, true); // propagate from diffuser to detector
+            }
 
-            } else if (m_SOD > m_SdD) { // object is after diffuser
+            // foreground image (diffuser + object)
+            if (m_SOD < m_SdD){ // object is located before diffuser
 
-                qDebug() << "obj+diff : propagate in diff :";
-                PropagateInMaterial(I_fg, phi_fg, diff, m_diffThickness, m_SdD, m_M_diff, m_fM_diff, m_numMVSlicesDiff, m_numDiffVoxelsZ, n_diff[e], n_base[e], e); // propagate through the diffuser
-                qDebug() << "propagate from diff to obj:";
-                PropagateInFreeSpace(I_fg, phi_fg, m_diffThickness, m_SdD, m_SOD, m_M_obj[0], m_M_diff[m_numDiffVoxelsZ], e, false); // propagate from diffuser to object
-                qDebug() << "propagate in obj :";
-                PropagateInMaterial(I_fg, phi_fg, obj, m_objThickness, m_SOD, m_M_obj, m_fM_obj, m_numMVSlicesObj, m_numObjVoxelsZ, n_obj[e], n_obj[e], e); // propagate through the object
-                qDebug() << "propagate from obj to det:";
-                PropagateInFreeSpace(I_fg, phi_fg, m_objThickness, m_SOD, m_SDD, 1, m_M_obj[m_numObjVoxelsZ], e, true); // propagate from object to detector
+                qDebug() << "Foreground image : propagating in the object ...\n";
+                PropagateInMaterial(I_fg_t, phi_fg_t, obj, m_objThickness, m_SOD, m_M_obj, m_fM_obj, m_numMVSlicesObj, m_numObjVoxelsZ, n_obj[e], n_obj[e], e); // propagate through the object
+                qDebug() << "Foreground image : propagating from the object to the diffuser ...\n";
+                PropagateInFreeSpace(I_fg_t, phi_fg_t, m_objThickness, m_SOD, m_SdD, m_M_diff[0], m_M_obj[m_numObjVoxelsZ], e, false); // propagate from object to diffuser (or from diffuser to object)
+                qDebug() << "Foreground image : propagating in the diffuser ...\n";
+                PropagateInMaterial(I_fg_t, phi_fg_t, diff, m_diffThickness, m_SdD, m_M_diff, m_fM_diff,m_numMVSlicesDiff, m_numDiffVoxelsZ, n_diff[e], n_base[e], e); // propagate through the diffuser
+                qDebug() << "Foreground image : propagating from the diffuser to the detector ...\n";
+                PropagateInFreeSpace(I_fg_t, phi_fg_t, m_diffThickness, m_SdD, m_SDD, 1, m_M_diff[m_numDiffVoxelsZ], e, true); // propagate from diffuser to detector
+
+            } else if (m_SOD > m_SdD) { // object is located after diffuser
+
+                qDebug() << "Foreground image : propagating in the diffuser ...\n";
+                PropagateInMaterial(I_fg_t, phi_fg_t, diff, m_diffThickness, m_SdD, m_M_diff, m_fM_diff, m_numMVSlicesDiff, m_numDiffVoxelsZ, n_diff[e], n_base[e], e); // propagate through the diffuser
+                qDebug() << "Foreground image : propagating from the the diffuser to the object ...\n";
+                PropagateInFreeSpace(I_fg_t, phi_fg_t, m_diffThickness, m_SdD, m_SOD, m_M_obj[0], m_M_diff[m_numDiffVoxelsZ], e, false); // propagate from diffuser to object
+                qDebug() << "Foreground image : propagating in the object ...\n";
+                PropagateInMaterial(I_fg_t, phi_fg_t, obj, m_objThickness, m_SOD, m_M_obj, m_fM_obj, m_numMVSlicesObj, m_numObjVoxelsZ, n_obj[e], n_obj[e], e); // propagate through the object
+                qDebug() << "Foreground image : propagating from the object to the detector ...\n";
+                PropagateInFreeSpace(I_fg_t, phi_fg_t, m_objThickness, m_SOD, m_SDD, 1, m_M_obj[m_numObjVoxelsZ], e, true); // propagate from object to detector
 
             } else {
                  QMessageBox::warning(this, "ERROR", "source-to-object distance and source-to-diffuser distance can not be the same! Aborting...");
@@ -649,255 +670,242 @@ void Simulation::ConeBeamSimulation()
             }
             // if image values are in a very low scale, it would result in 0.
             // TODO : normalize all pixels to min or max and then convert it to float
-            for (size_t i = 0 ; i < I_bg.size() ; i++){
-                for (size_t j = 0 ; j < I_bg.size() ; j++){
-                    m_I_bg[i][j] += static_cast<float>(I_bg[i][j]);
-                    m_I_fg[i][j] += static_cast<float>(I_fg[i][j]);
-                    m_phi_bg[i][j] += static_cast<float>(phi_bg[i][j]);
-                    m_phi_fg[i][j] += static_cast<float>(phi_fg[i][j]);
-                    if (I_bg[i][j] < 0){
-                        bg++;
-                        // I_bg[i][j] = 0;
+            if (proj == 0){ // diff image
+                for (int i = 0 ; i < m_numPixels ; i++){
+                    for (int j = 0 ; j < m_numPixels ; j++){
+
+                        I_bg[i][j] += static_cast<float>(I_bg_t[i][j]);
+                        phi_bg[i][j] += static_cast<float>(phi_bg_t[i][j]);
+                        if (I_bg_t[i][j] < 0){
+                            bg++;
+                            // I_bg[i][j] = 0;
+                        }
                     }
-                    if (I_fg[i][j] < 0){
+                }
+            }
+            // diff + obj image
+            for (int i = 0 ; i < m_numPixels ; i++){
+                for (int j = 0 ; j < m_numPixels ; j++){
+
+                    I_fg[i][j][proj] += static_cast<float>(I_fg_t[i][j]);
+                    phi_fg[i][j][proj] += static_cast<float>(phi_fg_t[i][j]);
+                    if (I_fg_t[i][j] < 0){
                         fg++;
                         // I_fg[i][j] = 0;
                     }
                 }
             }
-            qDebug() << "bg=" << bg << ", fg=" << fg;
+            qDebug() << "bg=" << bg << ", fg=" << fg << "\n";
 
             bg = 0;
             fg = 0;
-
-            // reset for the next energy bin
-            I_bg.assign(m_numPixels, std::vector<double>(m_numPixels, 1.0));
-            phi_bg.assign(m_numPixels, std::vector<double>(m_numPixels, 0.0));
-            I_fg.assign(m_numPixels, std::vector<double>(m_numPixels, 1.0));
-            phi_fg.assign(m_numPixels, std::vector<double>(m_numPixels, 0.0));
 
         } // end of energy loop
 
         // Apply detector PSF to final images
         // BlurImage();
 
-        // TODO : user determines the output image name and format
-        // save background (bg) and foreground (fg) images to files
-        qDebug() << "writing images to files ... :";
-        std::string output_image_I_bg = "I_bg_" + std::to_string(proj+1) + ".tif";
-        std::string output_image_phi_bg = "phi_bg_" + std::to_string(proj+1) + ".tif";
-        std::string output_image_I_fg = "I_fg_" + std::to_string(proj+1) + ".tif";
-        std::string output_image_phi_fg = "phi_fg_" + std::to_string(proj+1) + ".tif";
-
-        WriteToImage(m_I_bg, output_image_I_bg, proj);
-        WriteToImage(m_phi_bg, output_image_phi_bg, proj);
-        WriteToImage(m_I_fg, output_image_I_fg, proj);
-        WriteToImage(m_phi_fg, output_image_phi_fg, proj);
-
-        // // rotate object
-        // obj = rotate3DObjectY(obj, m_numProj);
-
-            // // std::ofstream file_obj("object.txt");
-            // std::ofstream file_diff("diffuser.txt");
-            // // std::ofstream file_Idiff("I_diff.txt");
-
-            // if (file_diff.is_open())
-            // {
-            //     for (int p = 0 ; p < m_numPixels ; p++)
-            //     {
-            //         for (int q = 0 ; q < m_numPixels ; q++)
-            //         {
-            //             // file_Idiff << I_bg[p][q] << " ";
-            //             // for (int l = 0 ; l < m_numObjVoxelsZ; l++)
-            //             // {
-            //             //     file_obj << obj[p][q][l].imaginaryPart << " ";
-            //             // }
-            //             // file_obj << "\n";
-            //             for (int l = 0 ; l < m_numDiffVoxelsZ; l++)
-            //             {
-            //                 file_diff << diff[p][q][l] << " ";
-            //             }
-            //             file_diff << "\n";
-            //         }
-            //         // file_Idiff <<  "\n";
-            //     }
-            // } else {
-            //     qDebug() << "file was not open";
-            //     return;
-            // }
-
-            // // file_Idiff.close();
-            // file_diff.close();
+        // rotate object
+        obj = rotate3DObjectY(obj, m_numProj);
 
     } // end of projections loop
 
+
+    // save background (bg) and foreground (fg) images to files
+    qDebug() << "writing images to files ... :";
+
+    // there is no rotation/tomo for bg images
+    std::string output_image_I_bg = "I_bg";
+    std::string output_image_phi_bg = "phi_bg";
+    WriteToImage2D(I_bg, output_image_I_bg, 0);
+    WriteToImage2D(phi_bg, output_image_phi_bg, 0);
+
+    qDebug() << "size of I_fg is :" << I_fg.size() << " x " << I_fg[0].size() << " x " << I_fg[0][0].size();
+
+    std::string output_image_I_fg = "I_fg";
+    std::string output_image_phi_fg = "phi_fg";
+    WriteToImage3D(I_fg, output_image_I_fg);
+    WriteToImage3D(phi_fg, output_image_phi_fg);
+
+    // std::string output_image_obj = "object.nii";
+    // for (size_t i = 0 ; i < obj.size() ; i++){
+    //     for (size_t j = 0 ; j < obj[0].size() ; j++){
+    //         for (size_t k = 0 ; k < obj[0][0].size() ; k++){
+    //             obj_float[i][j][k] = obj[i][j][k]
+    //         }
+    //     }
+    // }
+    // WriteToImage3D(obj, output_image_obj);
+    // // qDebug() << "size of obj is :" << obj.size() << " x " << obj[0].size() << " x " << obj[0][0].size();
+
+
 }
 
-void Simulation::ParBeamSimulation()
-{
-    beta.clear(); delta.clear();
-    Gx_I.clear(); Gy_I.clear(); Gx_phi.clear(); Gy_phi.clear(); L_phi.clear();
-    m_I_bg.clear(); m_phi_bg.clear(); m_I_fg.clear(); m_phi_fg.clear();
+// void Simulation::ParBeamSimulation()
+// {
+//     beta.clear(); delta.clear();
+//     Gx_I.clear(); Gy_I.clear(); Gx_phi.clear(); Gy_phi.clear(); L_phi.clear();
+//     m_I_bg.clear(); m_phi_bg.clear(); m_I_fg.clear(); m_phi_fg.clear();
 
-    setParams(); // set all parameters
+//     setParams(); // set all parameters
 
-    // temporary matrices declaration
-    std::vector<std::vector<double>> I_bg(m_numPixels, std::vector<double>(m_numPixels, 1.0));
-    std::vector<std::vector<double>> phi_bg(m_numPixels, std::vector<double>(m_numPixels, 0.0));
-    std::vector<std::vector<double>> I_fg(m_numPixels, std::vector<double>(m_numPixels, 1.0));
-    std::vector<std::vector<double>> phi_fg(m_numPixels, std::vector<double>(m_numPixels, 0.0));
+//     // temporary matrices declaration
+//     std::vector<std::vector<double>> I_bg(m_numPixels, std::vector<double>(m_numPixels, 1.0));
+//     std::vector<std::vector<double>> phi_bg(m_numPixels, std::vector<double>(m_numPixels, 0.0));
+//     std::vector<std::vector<double>> I_fg(m_numPixels, std::vector<double>(m_numPixels, 1.0));
+//     std::vector<std::vector<double>> phi_fg(m_numPixels, std::vector<double>(m_numPixels, 0.0));
 
-    // object declarations
-    std::unique_ptr<Object> object = std::make_unique<Object>(m_numObjVoxelsZ, m_numPixels, m_pixelSize/m_M_obj[0], tab_diffuser_object);
-    std::vector<std::vector<std::vector<int>>> obj(m_numPixels, std::vector<std::vector<int>>(m_numPixels, std::vector<int>(m_numObjVoxelsZ, 0)));
-    std::vector<Materials::refractiveIndex> n_obj = mat->RefractiveIndex(m_energyVector, m_physList[3].formula, m_physList[3].density);
-    // create object
-    if (tab_diffuser_object->m_virtualObject){
-        obj.clear();
-        obj.shrink_to_fit();
-        std::vector<std::vector<std::vector<float>>> vObj(m_numPixels, std::vector<std::vector<float>>(m_numPixels, std::vector<float>(m_numObjVoxelsZ)));
-        object->CreateObject(vObj);
-    } else {
-        object->CreateObject(obj);
-    }
+//     // object declarations
+//     std::unique_ptr<Object> object = std::make_unique<Object>(m_numObjVoxelsZ, m_numPixels, m_pixelSize/m_M_obj[0], tab_diffuser_object);
+//     std::vector<std::vector<std::vector<int>>> obj(m_numPixels, std::vector<std::vector<int>>(m_numPixels, std::vector<int>(m_numObjVoxelsZ, 0)));
+//     std::vector<Materials::refractiveIndex> n_obj = mat->RefractiveIndex(m_energyVector, m_physList[3].formula, m_physList[3].density);
+//     // create object
+//     if (tab_diffuser_object->m_virtualObject){
+//         obj.clear();
+//         obj.shrink_to_fit();
+//         std::vector<std::vector<std::vector<float>>> vObj(m_numPixels, std::vector<std::vector<float>>(m_numPixels, std::vector<float>(m_numObjVoxelsZ)));
+//         object->CreateObject(vObj);
+//     } else {
+//         object->CreateObject(obj);
+//     }
 
-    // diffuser declarations
-    std::vector<std::vector<std::vector<int>>> diff(m_numPixels, std::vector<std::vector<int>>(m_numPixels, std::vector<int>(m_numDiffVoxelsZ, 2)));
-    std::vector<Materials::refractiveIndex> n_diff = mat->RefractiveIndex(m_energyVector, m_physList[1].formula, m_physList[1].density);
-    std::vector<Materials::refractiveIndex> n_base = mat->RefractiveIndex(m_energyVector, m_physList[2].formula, m_physList[2].density);
-    std::unique_ptr<Diffuser> diffuser = std::make_unique<Diffuser>(m_numPixels, m_numDiffVoxelsZ, m_pixelSize/m_M_diff[0], tab_diffuser_object);
-    diffuser->CreateDiffuser(diff); // create diffuser
-    qDebug() << "numGrits=" << diffuser->m_numGrits;
+//     // diffuser declarations
+//     std::vector<std::vector<std::vector<int>>> diff(m_numPixels, std::vector<std::vector<int>>(m_numPixels, std::vector<int>(m_numDiffVoxelsZ, 2)));
+//     std::vector<Materials::refractiveIndex> n_diff = mat->RefractiveIndex(m_energyVector, m_physList[1].formula, m_physList[1].density);
+//     std::vector<Materials::refractiveIndex> n_base = mat->RefractiveIndex(m_energyVector, m_physList[2].formula, m_physList[2].density);
+//     std::unique_ptr<Diffuser> diffuser = std::make_unique<Diffuser>(m_numPixels, m_numDiffVoxelsZ, m_pixelSize/m_M_diff[0], tab_diffuser_object);
+//     diffuser->CreateDiffuser(diff); // create diffuser
+//     qDebug() << "numGrits=" << diffuser->m_numGrits;
 
-    // loop over projections
-    for (int proj = 0 ; proj < m_numProj ; proj++)
-    {
-        // reset intensity distribution's amplitude and phase images for each projection
-        m_I_bg.assign(m_numPixels, std::vector<float>(m_numPixels, 0.0));
-        m_phi_bg.assign(m_numPixels, std::vector<float>(m_numPixels, 0.0));
-        m_I_fg.assign(m_numPixels, std::vector<float>(m_numPixels, 0.0));
-        m_phi_fg.assign(m_numPixels, std::vector<float>(m_numPixels, 0.0));
+//     // loop over projections
+//     for (int proj = 0 ; proj < m_numProj ; proj++)
+//     {
+//         // reset intensity distribution's amplitude and phase images for each projection
+//         m_I_bg.assign(m_numPixels, std::vector<float>(m_numPixels, 0.0));
+//         m_phi_bg.assign(m_numPixels, std::vector<float>(m_numPixels, 0.0));
+//         m_I_fg.assign(m_numPixels, std::vector<float>(m_numPixels, 0.0));
+//         m_phi_fg.assign(m_numPixels, std::vector<float>(m_numPixels, 0.0));
 
-        // loop on all X-ray energies
-        for (size_t e = 0 ; e < m_energyVector.size() ; e++)
-        {
-            // reference image (only with diffuser)
-            qDebug() << "only diff-> propagate in diff :\n";
-            PropagateInMaterial(I_bg, phi_bg, diff, m_diffThickness, m_SdD, m_M_diff, m_fM_diff, m_numMVSlicesDiff, m_numDiffVoxelsZ, n_diff[e], n_base[e], e); // propagate through the diffuser
-            qDebug() << "\npropagate from diff to det:\n";
-            PropagateInFreeSpace(I_bg, phi_bg, m_diffThickness, m_SdD, m_SDD, 1, m_M_diff[m_numDiffVoxelsZ], e, true); // propagate from diffuser to detector
+//         // loop on all X-ray energies
+//         for (size_t e = 0 ; e < m_energyVector.size() ; e++)
+//         {
+//             // reference image (only with diffuser)
+//             qDebug() << "only diff-> propagate in diff :\n";
+//             PropagateInMaterial(I_bg, phi_bg, diff, m_diffThickness, m_SdD, m_M_diff, m_fM_diff, m_numMVSlicesDiff, m_numDiffVoxelsZ, n_diff[e], n_base[e], e); // propagate through the diffuser
+//             qDebug() << "\npropagate from diff to det:\n";
+//             PropagateInFreeSpace(I_bg, phi_bg, m_diffThickness, m_SdD, m_SDD, 1, m_M_diff[m_numDiffVoxelsZ], e, true); // propagate from diffuser to detector
 
-            // image (diffuser + object)
-            if (m_SOD < m_SdD){ // object is before diffuser
+//             // image (diffuser + object)
+//             if (m_SOD < m_SdD){ // object is before diffuser
 
-                qDebug() << "with diff&obj->propagate in object:\n";
-                PropagateInMaterial(I_fg, phi_fg, obj, m_objThickness, m_SOD, m_M_obj, m_fM_obj, m_numMVSlicesObj, m_numObjVoxelsZ, n_obj[e], n_obj[e], e); // propagate through the object
-                qDebug() << "\npropagate from obj to diff:\n";
-                PropagateInFreeSpace(I_fg, phi_fg, m_objThickness, m_SOD, m_SdD, m_M_diff[0], m_M_obj[m_numObjVoxelsZ], e, false); // propagate from object to diffuser (or from diffuser to object)
-                qDebug() << "\npropagate in diff:\n";
-                PropagateInMaterial(I_fg, phi_fg, diff, m_diffThickness, m_SdD, m_M_diff, m_fM_diff,m_numMVSlicesDiff, m_numDiffVoxelsZ, n_diff[e], n_base[e], e); // propagate through the diffuser
-                qDebug() << "\npropagate from diff to det:\n";
-                PropagateInFreeSpace(I_fg, phi_fg, m_diffThickness, m_SdD, m_SDD, 1, m_M_diff[m_numDiffVoxelsZ], e, true); // propagate from diffuser to detector
+//                 qDebug() << "with diff&obj->propagate in object:\n";
+//                 PropagateInMaterial(I_fg, phi_fg, obj, m_objThickness, m_SOD, m_M_obj, m_fM_obj, m_numMVSlicesObj, m_numObjVoxelsZ, n_obj[e], n_obj[e], e); // propagate through the object
+//                 qDebug() << "\npropagate from obj to diff:\n";
+//                 PropagateInFreeSpace(I_fg, phi_fg, m_objThickness, m_SOD, m_SdD, m_M_diff[0], m_M_obj[m_numObjVoxelsZ], e, false); // propagate from object to diffuser (or from diffuser to object)
+//                 qDebug() << "\npropagate in diff:\n";
+//                 PropagateInMaterial(I_fg, phi_fg, diff, m_diffThickness, m_SdD, m_M_diff, m_fM_diff,m_numMVSlicesDiff, m_numDiffVoxelsZ, n_diff[e], n_base[e], e); // propagate through the diffuser
+//                 qDebug() << "\npropagate from diff to det:\n";
+//                 PropagateInFreeSpace(I_fg, phi_fg, m_diffThickness, m_SdD, m_SDD, 1, m_M_diff[m_numDiffVoxelsZ], e, true); // propagate from diffuser to detector
 
-            } else if (m_SOD > m_SdD) { // object is after diffuser
+//             } else if (m_SOD > m_SdD) { // object is after diffuser
 
-                qDebug() << "obj+diff : propagate in diff :";
-                PropagateInMaterial(I_fg, phi_fg, diff, m_diffThickness, m_SdD, m_M_diff, m_fM_diff, m_numMVSlicesDiff, m_numDiffVoxelsZ, n_diff[e], n_base[e], e); // propagate through the diffuser
-                qDebug() << "propagate from diff to obj:";
-                PropagateInFreeSpace(I_fg, phi_fg, m_diffThickness, m_SdD, m_SOD, m_M_obj[0], m_M_diff[m_numDiffVoxelsZ], e, false); // propagate from diffuser to object
-                qDebug() << "propagate in obj :";
-                PropagateInMaterial(I_fg, phi_fg, obj, m_objThickness, m_SOD, m_M_obj, m_fM_obj, m_numMVSlicesObj, m_numObjVoxelsZ, n_obj[e], n_obj[e], e); // propagate through the object
-                qDebug() << "propagate from obj to det:";
-                PropagateInFreeSpace(I_fg, phi_fg, m_objThickness, m_SOD, m_SDD, 1, m_M_obj[m_numObjVoxelsZ], e, true); // propagate from object to detector
+//                 qDebug() << "obj+diff : propagate in diff :";
+//                 PropagateInMaterial(I_fg, phi_fg, diff, m_diffThickness, m_SdD, m_M_diff, m_fM_diff, m_numMVSlicesDiff, m_numDiffVoxelsZ, n_diff[e], n_base[e], e); // propagate through the diffuser
+//                 qDebug() << "propagate from diff to obj:";
+//                 PropagateInFreeSpace(I_fg, phi_fg, m_diffThickness, m_SdD, m_SOD, m_M_obj[0], m_M_diff[m_numDiffVoxelsZ], e, false); // propagate from diffuser to object
+//                 qDebug() << "propagate in obj :";
+//                 PropagateInMaterial(I_fg, phi_fg, obj, m_objThickness, m_SOD, m_M_obj, m_fM_obj, m_numMVSlicesObj, m_numObjVoxelsZ, n_obj[e], n_obj[e], e); // propagate through the object
+//                 qDebug() << "propagate from obj to det:";
+//                 PropagateInFreeSpace(I_fg, phi_fg, m_objThickness, m_SOD, m_SDD, 1, m_M_obj[m_numObjVoxelsZ], e, true); // propagate from object to detector
 
-            } else {
-                QMessageBox::warning(this, "ERROR", "source-to-object distance and source-to-diffuser distance can not be the same! Aborting...");
-                return;
-            }
-            // if image values are in a very low scale, it would result in 0.
-            // TODO : normalize all pixels to min or max and then convert it to float
-            for (size_t i = 0 ; i < I_bg.size() ; i++){
-                for (size_t j = 0 ; j < I_bg.size() ; j++){
-                    m_I_bg[i][j] += static_cast<float>(I_bg[i][j]);
-                    m_I_fg[i][j] += static_cast<float>(I_fg[i][j]);
-                    m_phi_bg[i][j] += static_cast<float>(phi_bg[i][j]);
-                    m_phi_fg[i][j] += static_cast<float>(phi_fg[i][j]);
-                    if (I_bg[i][j] < 0){
-                        bg++;
-                        // I_bg[i][j] = 0;
-                    }
-                    if (I_fg[i][j] < 0){
-                        fg++;
-                        // I_fg[i][j] = 0;
-                    }
-                }
-            }
-            qDebug() << "bg=" << bg << ", fg=" << fg;
+//             } else {
+//                 QMessageBox::warning(this, "ERROR", "source-to-object distance and source-to-diffuser distance can not be the same! Aborting...");
+//                 return;
+//             }
+//             // if image values are in a very low scale, it would result in 0.
+//             // TODO : normalize all pixels to min or max and then convert it to float
+//             for (size_t i = 0 ; i < I_bg.size() ; i++){
+//                 for (size_t j = 0 ; j < I_bg.size() ; j++){
+//                     m_I_bg[i][j] += static_cast<float>(I_bg[i][j]);
+//                     m_I_fg[i][j] += static_cast<float>(I_fg[i][j]);
+//                     m_phi_bg[i][j] += static_cast<float>(phi_bg[i][j]);
+//                     m_phi_fg[i][j] += static_cast<float>(phi_fg[i][j]);
+//                     if (I_bg[i][j] < 0){
+//                         bg++;
+//                         // I_bg[i][j] = 0;
+//                     }
+//                     if (I_fg[i][j] < 0){
+//                         fg++;
+//                         // I_fg[i][j] = 0;
+//                     }
+//                 }
+//             }
+//             qDebug() << "bg=" << bg << ", fg=" << fg;
 
-            bg = 0;
-            fg = 0;
+//             bg = 0;
+//             fg = 0;
 
-            // reset for the next energy bin
-            I_bg.assign(m_numPixels, std::vector<double>(m_numPixels, 1.0));
-            phi_bg.assign(m_numPixels, std::vector<double>(m_numPixels, 0.0));
-            I_fg.assign(m_numPixels, std::vector<double>(m_numPixels, 1.0));
-            phi_fg.assign(m_numPixels, std::vector<double>(m_numPixels, 0.0));
+//             // reset for the next energy bin
+//             I_bg.assign(m_numPixels, std::vector<double>(m_numPixels, 1.0));
+//             phi_bg.assign(m_numPixels, std::vector<double>(m_numPixels, 0.0));
+//             I_fg.assign(m_numPixels, std::vector<double>(m_numPixels, 1.0));
+//             phi_fg.assign(m_numPixels, std::vector<double>(m_numPixels, 0.0));
 
-        } // end of energy loop
+//         } // end of energy loop
 
-        // Apply detector PSF to final images
-        // BlurImage();
+//         // Apply detector PSF to final images
+//         // BlurImage();
 
-        // TODO : user determines the output image name and format
-        // save background (bg) and foreground (fg) images to files
-        qDebug() << "writing images to files ... :";
-        std::string output_image_I_bg = "I_bg_" + std::to_string(proj+1) + ".tif";
-        std::string output_image_phi_bg = "phi_bg_" + std::to_string(proj+1) + ".tif";
-        std::string output_image_I_fg = "I_fg_" + std::to_string(proj+1) + ".tif";
-        std::string output_image_phi_fg = "phi_fg_" + std::to_string(proj+1) + ".tif";
+//         // TODO : user determines the output image name and format
+//         // save background (bg) and foreground (fg) images to files
+//         qDebug() << "writing images to files ... :";
+//         std::string output_image_I_bg = "I_bg_" + std::to_string(proj+1) + ".tif";
+//         std::string output_image_phi_bg = "phi_bg_" + std::to_string(proj+1) + ".tif";
+//         std::string output_image_I_fg = "I_fg_" + std::to_string(proj+1) + ".tif";
+//         std::string output_image_phi_fg = "phi_fg_" + std::to_string(proj+1) + ".tif";
 
-        WriteToImage(m_I_bg, output_image_I_bg, proj);
-        WriteToImage(m_phi_bg, output_image_phi_bg, proj);
-        WriteToImage(m_I_fg, output_image_I_fg, proj);
-        WriteToImage(m_phi_fg, output_image_phi_fg, proj);
+//         WriteToImage(m_I_bg, output_image_I_bg, proj);
+//         WriteToImage(m_phi_bg, output_image_phi_bg, proj);
+//         WriteToImage(m_I_fg, output_image_I_fg, proj);
+//         WriteToImage(m_phi_fg, output_image_phi_fg, proj);
 
-        // // rotate object
-        // obj = rotate3DObjectY(obj, m_numProj);
+//         // // rotate object
+//         // obj = rotate3DObjectY(obj, m_numProj);
 
-        // // std::ofstream file_obj("object.txt");
-        // std::ofstream file_diff("diffuser.txt");
-        // // std::ofstream file_Idiff("I_diff.txt");
+//         // std::ofstream file_obj("object.txt");
+//         // // std::ofstream file_diff("diffuser.txt");
+//         // // // std::ofstream file_Idiff("I_diff.txt");
 
-        // if (file_diff.is_open())
-        // {
-        //     for (int p = 0 ; p < m_numPixels ; p++)
-        //     {
-        //         for (int q = 0 ; q < m_numPixels ; q++)
-        //         {
-        //             // file_Idiff << I_bg[p][q] << " ";
-        //             // for (int l = 0 ; l < m_numObjVoxelsZ; l++)
-        //             // {
-        //             //     file_obj << obj[p][q][l].imaginaryPart << " ";
-        //             // }
-        //             // file_obj << "\n";
-        //             for (int l = 0 ; l < m_numDiffVoxelsZ; l++)
-        //             {
-        //                 file_diff << diff[p][q][l] << " ";
-        //             }
-        //             file_diff << "\n";
-        //         }
-        //         // file_Idiff <<  "\n";
-        //     }
-        // } else {
-        //     qDebug() << "file was not open";
-        //     return;
-        // }
+//         // if (file_obj.is_open())
+//         // {
+//         //     for (int p = 0 ; p < m_numPixels ; p++)
+//         //     {
+//         //         for (int q = 0 ; q < m_numPixels ; q++)
+//         //         {
+//         //             // file_Idiff << I_bg[p][q] << " ";
+//         //             for (int l = 0 ; l < m_numObjVoxelsZ; l++)
+//         //             {
+//         //                 file_obj << obj[p][q][l] << " ";
+//         //             }
+//         //             file_obj << "\n";
+//         //             // for (int l = 0 ; l < m_numDiffVoxelsZ; l++)
+//         //             // {
+//         //             //     file_diff << diff[p][q][l] << " ";
+//         //             // }
+//         //             // file_diff << "\n";
+//         //         }
+//         //         // file_Idiff <<  "\n";
+//         //     }
+//         // } else {
+//         //     qDebug() << "file was not open";
+//         //     return;
+//         // }
 
-        // // file_Idiff.close();
-        // file_diff.close();
+//         // // // file_Idiff.close();
+//         // file_obj.close();
 
-    } // end of projections loop
-}
+//     } // end of projections loop
+// }
 
 void Simulation::InitiateSimulation()
 {
@@ -907,7 +915,7 @@ void Simulation::InitiateSimulation()
     setParams();
 
     if (tab_source_detector->m_parBeam){
-        ParBeamSimulation();
+        //ParBeamSimulation();
 
     } else if (tab_source_detector->m_coneBeam){
         ConeBeamSimulation();
@@ -922,11 +930,27 @@ void Simulation::InitiateSimulation()
     qDebug() << "Execution time : " << elapsedTime << "ms";
 }
 
-void Simulation::WriteToImage(const std::vector<std::vector<float>>& image, const std::string& image_name, const int& proj)
+void Simulation::WriteToImage2D(const std::vector<std::vector<float>>& image, const std::string& image_name, const int& indx)
 {
-    std::string output_image = image_name + std::to_string(proj+1) + ".tif";
+    std::string output_image = image_name + "_" + std::to_string(indx+1) + ".tif";
 
-    std::unique_ptr<ImageExporter<float>> exportedImage = std::make_unique<ImageExporter<float>>(static_cast<size_t>(m_numPixels), static_cast<size_t>(m_numPixels));
+    size_t sizeX = image.size();
+    size_t sizeY = image[0].size();
+
+    std::unique_ptr<ImageExporter<float>> exportedImage = std::make_unique<ImageExporter<float>>(sizeX, sizeY);
     exportedImage->SetData(image);
     exportedImage->Save2D(output_image);
+}
+
+void Simulation::WriteToImage3D(const std::vector<std::vector<std::vector<float>>>& image, const std::string& image_name)
+{
+    std::string output_image = image_name + ".nii";
+
+    size_t sizeX = image.size();
+    size_t sizeY = image[0].size();
+    size_t sizeZ = image[0][0].size();
+
+    std::unique_ptr<ImageExporter<float>> exportedImage = std::make_unique<ImageExporter<float>>(sizeX, sizeY, sizeZ);
+    exportedImage->SetData(image);
+    exportedImage->Save3D(output_image);
 }

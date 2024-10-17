@@ -11,6 +11,7 @@ public:
 
     void CreateObject(std::vector<std::vector<std::vector<int>>>& object);
     void CreateObject(std::vector<std::vector<std::vector<float>>>& object); // overloaded
+    std::vector<std::vector<std::vector<int>>> rotate3DObjectZ(std::vector<std::vector<std::vector<int>>>& object);
 
 private:
 
@@ -20,8 +21,6 @@ private:
 
     void CreateSphere(std::vector<std::vector<std::vector<int>>>& object);
     void CreateCylinder(std::vector<std::vector<std::vector<int>>>& object);
-
-
 
 };
 

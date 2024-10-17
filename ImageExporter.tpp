@@ -37,20 +37,20 @@ ImageExporter<T>::ImageExporter(size_t xSize, size_t ySize) {
 
 template <typename T>
 void ImageExporter<T>::SetData(const std::vector<std::vector<std::vector<T>>>& data) {
-    if (data.size() != m_Image3D->GetLargestPossibleRegion().GetSize()[2] ||
+    if (data.size() != m_Image3D->GetLargestPossibleRegion().GetSize()[0] ||
         data[0].size() != m_Image3D->GetLargestPossibleRegion().GetSize()[1] ||
-        data[0][0].size() != m_Image3D->GetLargestPossibleRegion().GetSize()[0]) {
+        data[0][0].size() != m_Image3D->GetLargestPossibleRegion().GetSize()[2]) {
         throw std::runtime_error("Data dimensions do not match image dimensions.");
     }
 
     typename ImageType3D::IndexType index;
-    for (size_t z = 0; z < m_Image3D->GetLargestPossibleRegion().GetSize()[2]; ++z) {
+    for (size_t x = 0; x < m_Image3D->GetLargestPossibleRegion().GetSize()[0]; ++x) {
         for (size_t y = 0; y < m_Image3D->GetLargestPossibleRegion().GetSize()[1]; ++y) {
-            for (size_t x = 0; x < m_Image3D->GetLargestPossibleRegion().GetSize()[0]; ++x) {
+            for (size_t z = 0; z < m_Image3D->GetLargestPossibleRegion().GetSize()[2]; ++z) {
                 index[0] = x;
                 index[1] = y;
                 index[2] = z;
-                m_Image3D->SetPixel(index, data[z][y][x]);
+                m_Image3D->SetPixel(index, data[x][y][z]);
             }
         }
     }
@@ -58,17 +58,17 @@ void ImageExporter<T>::SetData(const std::vector<std::vector<std::vector<T>>>& d
 
 template <typename T>
 void ImageExporter<T>::SetData(const std::vector<std::vector<T>>& data) {
-    if (data.size() != m_Image2D->GetLargestPossibleRegion().GetSize()[1] ||
-        data[0].size() != m_Image2D->GetLargestPossibleRegion().GetSize()[0]) {
+    if (data.size() != m_Image2D->GetLargestPossibleRegion().GetSize()[0] ||
+        data[0].size() != m_Image2D->GetLargestPossibleRegion().GetSize()[1]) {
         throw std::runtime_error("Data dimensions do not match image dimensions.");
     }
 
     typename ImageType2D::IndexType index;
-    for (size_t y = 0; y < m_Image2D->GetLargestPossibleRegion().GetSize()[1]; ++y) {
-        for (size_t x = 0; x < m_Image2D->GetLargestPossibleRegion().GetSize()[0]; ++x) {
+    for (size_t x = 0; x < m_Image2D->GetLargestPossibleRegion().GetSize()[1]; ++x) {
+        for (size_t y = 0; y < m_Image2D->GetLargestPossibleRegion().GetSize()[0]; ++y) {
             index[0] = x;
             index[1] = y;
-            m_Image2D->SetPixel(index, data[y][x]);
+            m_Image2D->SetPixel(index, data[x][y]);
         }
     }
 }

@@ -273,7 +273,7 @@ int DiffuserAndObject::getNumInterpolations()
     if ( (!(ui->lineEdit_NumInterp->text().isEmpty())) && ((ui->lineEdit_NumInterp->text().toInt()) > 1) ) {
         return (ui->lineEdit_NumInterp->text().toInt());
     } else {
-        QMessageBox::warning(this, "WARNING", "One interpolation was selected by user.");
+        // QMessageBox::warning(this, "WARNING", "One interpolation was selected by user.");
         return 1;
     }
 }

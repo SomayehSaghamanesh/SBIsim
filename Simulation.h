@@ -46,17 +46,6 @@ private:
     // coordinates
     std::vector<std::vector<double>> m_X, m_Y, m_rsqr;
 
-    // Images
-    std::vector<std::vector<float>> m_I_bg, m_I_fg, m_phi_bg, m_phi_fg;
-
-    // tempoarary loop matrices
-    std::vector<std::vector<double>> beta; // imaginary part of the complex refractive index
-    std::vector<std::vector<double>> delta; // real part of the complex refractive index
-    std::vector<std::vector<double>> Gx_I; // intensity gradient along x : here vertical side
-    std::vector<std::vector<double>> Gy_I; // intensity gradient along y : here horizontal side
-    std::vector<std::vector<double>> Gx_phi; // phase gradient along x : here vertical side
-    std::vector<std::vector<double>> Gy_phi; // phase gradient along y : here horizontal side
-    std::vector<std::vector<double>> L_phi; // 2D Laplacian of phi
 
     void getDynamicMagFactors();
     void setParams();
@@ -85,7 +74,9 @@ private:
     void ConeBeamSimulation();
     void ParBeamSimulation();
     void InitiateSimulation();
-    void WriteToImage(const std::vector<std::vector<float>>& image, const std::string& image_name, const int& proj);
+    void WriteToImage2D(const std::vector<std::vector<float>>& image, const std::string& image_name, const int& indx);
+    void WriteToImage3D(const std::vector<std::vector<std::vector<float>>>& image, const std::string& image_name);
+
 
 };
 
