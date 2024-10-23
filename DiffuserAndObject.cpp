@@ -25,6 +25,9 @@ DiffuserAndObject::DiffuserAndObject(QWidget *parent)
     ui->lineEdit_CDiameter->setEnabled(false);
     ui->lineEdit_CHeight->setEnabled(false);
     ui->lineEdit_SDiameter->setEnabled(false);
+    ui->lineEdit_VObject->setEnabled(false);
+    ui->lineEdit_vObjectMag->setEnabled(false);
+    ui->pushButton_VObject->setEnabled(false);
 
     MaterialsList();
     ui->comboBox_objectMaterial->addItems(m_materialsList);
@@ -47,19 +50,55 @@ void DiffuserAndObject::on_radioButton_Cylinder_toggled(bool checked)
     ui->lineEdit_CDiameter->setEnabled(checked);
     ui->lineEdit_CHeight->setEnabled(checked);
     m_cylinder = checked;
+    if (ui->radioButton_Cylinder->isChecked()){
+        ui->lineEdit_SDiameter->clear();
+        ui->lineEdit_VObject->clear();
+        ui->lineEdit_vObjectMag->clear();
+        ui->lineEdit_SDiameter->setEnabled(false);
+        ui->radioButton_VObject->setChecked(false);
+        ui->lineEdit_VObject->setEnabled(false);
+        ui->lineEdit_vObjectMag->setEnabled(false);
+        ui->pushButton_VObject->setEnabled(false);
+
+    }
 }
 
 void DiffuserAndObject::on_radioButton_Sphere_toggled(bool checked)
 {
     ui->lineEdit_SDiameter->setEnabled(checked);
     m_sphere = checked;
+    if (ui->radioButton_Sphere->isChecked()){
+        ui->lineEdit_CDiameter->clear();
+        ui->lineEdit_CHeight->clear();
+        ui->lineEdit_VObject->clear();
+        ui->lineEdit_vObjectMag->clear();
+        ui->lineEdit_CDiameter->setEnabled(false);
+        ui->lineEdit_CHeight->setEnabled(false);
+        ui->radioButton_VObject->setChecked(false);
+        ui->lineEdit_VObject->setEnabled(false);
+        ui->lineEdit_vObjectMag->setEnabled(false);
+        ui->pushButton_VObject->setEnabled(false);
+    }
 }
 
 void DiffuserAndObject::on_radioButton_VObject_toggled(bool checked)
 {
     ui->lineEdit_VObject->setEnabled(checked);
     ui->pushButton_VObject->setEnabled(checked);
+    ui->lineEdit_vObjectMag->setEnabled(checked);
     m_virtualObject = checked;
+    if (ui->radioButton_VObject->isChecked()){
+        ui->lineEdit_CDiameter->clear();
+        ui->lineEdit_CHeight->clear();
+        ui->lineEdit_SDiameter->clear();
+        ui->lineEdit_CDiameter->setEnabled(false);
+        ui->lineEdit_CHeight->setEnabled(false);
+        ui->lineEdit_SDiameter->setEnabled(false);
+        ui->radioButton_Sphere->setChecked(false);
+        ui->radioButton_Cylinder->setChecked(false);
+        // on_radioButton_Sphere_toggled(false);
+        // on_radioButton_Cylinder_toggled(false);
+    }
 }
 
 QString DiffuserAndObject::getObjectName()

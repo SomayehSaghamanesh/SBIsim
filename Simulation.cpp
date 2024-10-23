@@ -3,6 +3,7 @@
 #include "ui_Simulation.h"
 #include "Object.h"
 #include "Diffuser.h"
+// #include "ConeBeamSimulation.h"
 
 #include "itkNiftiImageIOFactory.h"
 #include "itkTIFFImageIOFactory.h"
@@ -11,7 +12,6 @@
 #include <QDebug>
 #include <dlfcn.h>
 #include <memory>
-#include <algorithm>
 #include <QElapsedTimer>
 #include <string>
 
@@ -19,6 +19,11 @@
 Simulation::Simulation(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::Simulation)
+    , tab_source_detector(nullptr)
+    , tab_diffuser_object(nullptr)
+    , tab_setup(nullptr)
+    , mat(nullptr)
+    //, m_coneBeam(nullptr)
 {
     ui->setupUi(this);
 
@@ -42,12 +47,12 @@ Simulation::Simulation(QWidget *parent)
 Simulation::~Simulation()
 {
     delete ui;
+    delete tab_source_detector;
+    delete tab_diffuser_object;
+    delete tab_setup;
+    delete mat;
+    // delete m_coneBeam;
 }
-
-// double Simulation::getFOVmin()
-// {
-
-// }
 
 void Simulation::getDynamicMagFactors()
 {
@@ -113,8 +118,7 @@ void Simulation::setParams()
     m_detEnergyResponse.assign(m_energyVector.size(), 1.0); // for now for simplicity
 
     // detector
-    m_pixelSize = tab_source_detector->getPixelSizeMM();
-    m_pixelSize = m_pixelSize*0.001; // [m]
+    m_pixelSize = (tab_source_detector->getPixelSizeMM())*0.001; // [m]
     m_numPixels = tab_source_detector->getNumPixels();
     tab_source_detector->Meshgrid(m_X, m_Y, m_numPixels, m_pixelSize);
     tab_source_detector->DetectorCoordinates(m_X, m_Y, m_rsqr, m_numPixels);
@@ -136,12 +140,16 @@ void Simulation::setParams()
         QMessageBox::warning(this, "ERROR", "Source-to-detector distance can not be smaller than source distance to object or diffuser! Aborting ...");
         return;
     }
+    if (m_SOD == m_SdD){
+        QMessageBox::warning(this, "ERROR", "source-to-object distance and source-to-diffuser distance can not be the same! Aborting...");
+        return;
+    }
 
     m_objThickness = tab_diffuser_object->getObjectThickness();
     m_diffThickness = tab_diffuser_object->getDiffuserThickness();
 
-    m_numMVSlicesObj = tab_diffuser_object->getNumMVSlices(m_objThickness, m_numObjVoxelsZ, m_pixelSize, m_M_obj[0]);
-    m_numMVSlicesDiff = tab_diffuser_object->getNumMVSlices(m_diffThickness, m_numDiffVoxelsZ, m_pixelSize, m_M_diff[0]);
+    m_numMVSlicesObj = tab_diffuser_object->getNumMVSlices(m_objThickness, m_numObjVoxelsZ, m_pixelSize, m_SDD/m_SOD);
+    m_numMVSlicesDiff = tab_diffuser_object->getNumMVSlices(m_diffThickness, m_numDiffVoxelsZ, m_pixelSize, m_SDD/m_SdD);
     m_numInterp = tab_diffuser_object->getNumInterpolations();
 
     // mag factors based on the fresnel scaling theory
@@ -174,7 +182,7 @@ void Simulation::setParams()
     {
         qDebug() << "physlist : d = " << m_physList[i].density << ", Z/A = " << m_physList[i].Z_A << ", name = " << m_physList[i].name;
     }
-
+    qDebug() << "pixelSize : " << m_pixelSize;
     qDebug() << "numPixels : " << m_numPixels;
     qDebug() << "obj-thickness : " << m_objThickness;
     qDebug() << "numVoxelsInZObj : " << m_numObjVoxelsZ;
@@ -188,6 +196,57 @@ void Simulation::setParams()
     qDebug() << "M_diff : " << m_M_diff;
     qDebug() << "fM_obj : " << m_fM_obj;
     qDebug() << "fM_diff : " << m_fM_diff;
+}
+
+void Simulation::WriteToImage2D(const std::vector<std::vector<float>>& image, const std::string& image_name, const int& indx)
+{
+    std::string output_image = image_name + "_" + std::to_string(indx+1) + ".tif";
+
+    size_t sizeX = image.size();
+    size_t sizeY = image[0].size();
+
+    std::unique_ptr<ImageExporter<float>> exportedImage = std::make_unique<ImageExporter<float>>(sizeX, sizeY);
+    exportedImage->SetData(image);
+    exportedImage->Save2D(output_image);
+}
+
+void Simulation::WriteToImage3D(const std::vector<std::vector<std::vector<float>>>& image, const std::string& image_name)
+{
+    std::string output_image = image_name + ".nii";
+
+    size_t sizeX = image.size();
+    size_t sizeY = image[0].size();
+    size_t sizeZ = image[0][0].size();
+
+    std::unique_ptr<ImageExporter<float>> exportedImage = std::make_unique<ImageExporter<float>>(sizeX, sizeY, sizeZ);
+    exportedImage->SetData(image);
+    exportedImage->Save3D(output_image);
+}
+
+void Simulation::InitiateSimulation()
+{
+    QElapsedTimer timer;
+    timer.start();
+
+    // setParams();
+
+    // m_coneBeam = new ConeBeamSimulation(this);
+
+    if (tab_source_detector->m_parBeam){
+        //m_parBeam->initiateSimulation();
+
+    } else if (tab_source_detector->m_coneBeam){
+        // m_coneBeam->InitiateSimulation();
+        ConeBeamSimulation();
+
+    } else {
+        QMessageBox::warning(this, "ERROR", "Please select either parallel beam or cone-beam geometry. Aborting ...");
+        return;
+
+    }
+
+    qint64 elapsedTime = timer.elapsed();
+    qDebug() << "Execution time : " << elapsedTime << "ms";
 }
 
 void Simulation::Gradient2D(const std::vector<std::vector<double>>& matrix, std::vector<std::vector<double>>& Gx, std::vector<std::vector<double>>& Gy, const double spacing)
@@ -278,9 +337,9 @@ void Simulation::Laplacian2D(const std::vector<std::vector<double>>& matrix, std
 
 }
 
- std::vector<std::vector<std::vector<int>>> Simulation::rotate3DObjectY(std::vector<std::vector<std::vector<int>>>& object, const int& numProjs)
+ std::vector<std::vector<std::vector<int>>> Simulation::rotate3DObjectY(std::vector<std::vector<std::vector<int>>>& object, const int& numProj)
 {
-    double rotAng = 360/numProjs * pi /180.0; // radians
+    double rotAng = 360/numProj * pi /180.0; // radians
 
     // rotation matrix around Y-axis
     double cosTheta = std::cos(rotAng);
@@ -907,50 +966,6 @@ void Simulation::ConeBeamSimulation()
 //     } // end of projections loop
 // }
 
-void Simulation::InitiateSimulation()
-{
-    QElapsedTimer timer;
-    timer.start();
 
-    setParams();
 
-    if (tab_source_detector->m_parBeam){
-        //ParBeamSimulation();
 
-    } else if (tab_source_detector->m_coneBeam){
-        ConeBeamSimulation();
-
-    } else {
-        QMessageBox::warning(this, "ERROR", "Please select either parallel beam or cone-beam geometry. Aborting ...");
-        return;
-
-    }
-
-    qint64 elapsedTime = timer.elapsed();
-    qDebug() << "Execution time : " << elapsedTime << "ms";
-}
-
-void Simulation::WriteToImage2D(const std::vector<std::vector<float>>& image, const std::string& image_name, const int& indx)
-{
-    std::string output_image = image_name + "_" + std::to_string(indx+1) + ".tif";
-
-    size_t sizeX = image.size();
-    size_t sizeY = image[0].size();
-
-    std::unique_ptr<ImageExporter<float>> exportedImage = std::make_unique<ImageExporter<float>>(sizeX, sizeY);
-    exportedImage->SetData(image);
-    exportedImage->Save2D(output_image);
-}
-
-void Simulation::WriteToImage3D(const std::vector<std::vector<std::vector<float>>>& image, const std::string& image_name)
-{
-    std::string output_image = image_name + ".nii";
-
-    size_t sizeX = image.size();
-    size_t sizeY = image[0].size();
-    size_t sizeZ = image[0][0].size();
-
-    std::unique_ptr<ImageExporter<float>> exportedImage = std::make_unique<ImageExporter<float>>(sizeX, sizeY, sizeZ);
-    exportedImage->SetData(image);
-    exportedImage->Save3D(output_image);
-}

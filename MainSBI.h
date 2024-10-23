@@ -14,7 +14,7 @@ class MainSBI : public QMainWindow
     Q_OBJECT
 
 public:
-    MainSBI(QWidget *parent = nullptr);
+    explicit MainSBI(QWidget *parent = nullptr);
     ~MainSBI();
 
 private slots:

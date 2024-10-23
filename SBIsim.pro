@@ -18,6 +18,8 @@ INCLUDEPATH +=/usr/local/include/ITK-6.0
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    Compute.cpp \
+    ConeBeamSimulation.cpp \
     Diffuser.cpp \
     DiffuserAndObject.cpp \
     Object.cpp \
@@ -28,6 +30,8 @@ SOURCES += \
     MainSBI.cpp
 
 HEADERS += \
+    Compute.h \
+    ConeBeamSimulation.h \
     Diffuser.h \
     DiffuserAndObject.h \
     ImageExporter.h \

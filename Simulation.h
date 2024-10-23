@@ -6,8 +6,10 @@
 #include "Setup.h"
 #include "Materials.h"
 
+
 #include <QMainWindow>
 
+// class ConeBeamSimulation; // forward declaration
 
 namespace Ui {
 class Simulation;
@@ -21,15 +23,16 @@ public:
     explicit Simulation(QWidget *parent = nullptr);
     ~Simulation();
 
-private:
-    Ui::Simulation *ui;
+// protected:
 
-    int bg = 0, fg = 0;
+    Ui::Simulation *ui;
 
     SourceAndDetector *tab_source_detector;
     DiffuserAndObject *tab_diffuser_object;
     Setup *tab_setup;
     Materials *mat;
+
+    // ConeBeamSimulation *m_coneBeam;
 
     const double hc = 1.24e-9; // [keV.m]
     const double pi = M_PI;
@@ -39,7 +42,7 @@ private:
     QVector<Materials::MaterialProperties> m_physList = {{0, 0, "", ""}}; // it will have four elements at end: the order is detector, diffuser, base, and object
 
     double m_SOD{0}, m_SdD{0}, m_SDD{0}, m_pixelSize{0}, m_opticalMag{1};
-    int m_numProj{1}, m_numObjVoxelsZ{1}, m_numDiffVoxelsZ{1}, m_numInterp{1}, m_numMVSlicesObj{1}, m_numMVSlicesDiff{1}, m_numPixels{0};
+    int m_numProj{1}, m_numObjVoxelsZ{1}, m_numDiffVoxelsZ{1}, m_numInterp{1}, m_numMVSlicesObj{1}, m_numMVSlicesDiff{1}, m_numPixels{0}, bg{0}, fg{0};
     double m_objThickness{0}, m_diffThickness{0};
     std::vector<double> m_M_obj{1}, m_M_diff{1}, m_fM_obj{1}, m_fM_diff{1};
 
@@ -72,11 +75,15 @@ private:
                               const double& dist1, const double& dist2, const double& Mag1,
                               const double& Mag2, const size_t& energyIndx, const bool isLastPropagation);
     void ConeBeamSimulation();
-    void ParBeamSimulation();
+    // void ParBeamSimulation();
     void InitiateSimulation();
     void WriteToImage2D(const std::vector<std::vector<float>>& image, const std::string& image_name, const int& indx);
     void WriteToImage3D(const std::vector<std::vector<std::vector<float>>>& image, const std::string& image_name);
 
+
+//protected:
+
+//
 
 };
 
