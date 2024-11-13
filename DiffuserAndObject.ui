@@ -28,6 +28,9 @@
   <property name="toolTip">
    <string>Number of interpolations in MVS (normally between 1 to 10)</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">font: 12pt &quot;Ubuntu&quot;;</string>
+  </property>
   <widget class="QLabel" name="label_9">
    <property name="geometry">
     <rect>
@@ -60,27 +63,30 @@
     <property name="geometry">
      <rect>
       <x>31</x>
-      <y>16</y>
-      <width>647</width>
-      <height>119</height>
+      <y>15</y>
+      <width>679</width>
+      <height>122</height>
      </rect>
     </property>
-    <layout class="QFormLayout" name="formLayout_4">
+    <layout class="QFormLayout" name="formLayout_2">
      <property name="verticalSpacing">
-      <number>15</number>
+      <number>20</number>
      </property>
      <item row="0" column="0">
-      <layout class="QFormLayout" name="formLayout_3">
-       <property name="horizontalSpacing">
-        <number>23</number>
+      <layout class="QHBoxLayout" name="horizontalLayout_15">
+       <property name="spacing">
+        <number>30</number>
        </property>
-       <item row="0" column="0">
+       <item>
         <layout class="QVBoxLayout" name="verticalLayout">
          <property name="spacing">
-          <number>13</number>
+          <number>10</number>
          </property>
          <item>
           <widget class="QRadioButton" name="radioButton_Cylinder">
+           <property name="toolTip">
+            <string>Cylinder</string>
+           </property>
            <property name="text">
             <string>Cylinder</string>
            </property>
@@ -88,6 +94,9 @@
          </item>
          <item>
           <widget class="QRadioButton" name="radioButton_Sphere">
+           <property name="toolTip">
+            <string>Sphere</string>
+           </property>
            <property name="text">
             <string>Sphere</string>
            </property>
@@ -95,17 +104,17 @@
          </item>
         </layout>
        </item>
-       <item row="0" column="1">
-        <layout class="QFormLayout" name="formLayout_2">
+       <item>
+        <layout class="QFormLayout" name="formLayout">
          <property name="verticalSpacing">
-          <number>15</number>
+          <number>10</number>
          </property>
          <item row="0" column="0">
-          <layout class="QFormLayout" name="formLayout">
-           <property name="horizontalSpacing">
-            <number>15</number>
+          <layout class="QHBoxLayout" name="horizontalLayout_7">
+           <property name="spacing">
+            <number>20</number>
            </property>
-           <item row="0" column="0">
+           <item>
             <layout class="QHBoxLayout" name="horizontalLayout">
              <property name="spacing">
               <number>9</number>
@@ -122,7 +131,7 @@
              </item>
             </layout>
            </item>
-           <item row="0" column="1">
+           <item>
             <layout class="QHBoxLayout" name="horizontalLayout_2">
              <property name="spacing">
               <number>9</number>
@@ -145,9 +154,6 @@
           <layout class="QHBoxLayout" name="horizontalLayout_3">
            <property name="spacing">
             <number>9</number>
-           </property>
-           <property name="sizeConstraint">
-            <enum>QLayout::SetFixedSize</enum>
            </property>
            <item>
             <widget class="QLabel" name="label_SDiameter">
@@ -185,6 +191,9 @@
        </property>
        <item>
         <widget class="QLabel" name="label">
+         <property name="toolTip">
+          <string>Select the object material</string>
+         </property>
          <property name="text">
           <string>Object Material :</string>
          </property>
@@ -215,9 +224,9 @@
    <property name="geometry">
     <rect>
      <x>40</x>
-     <y>210</y>
+     <y>220</y>
      <width>811</width>
-     <height>111</height>
+     <height>101</height>
     </rect>
    </property>
    <property name="frameShape">
@@ -229,15 +238,15 @@
    <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
-      <x>33</x>
-      <y>20</y>
-      <width>731</width>
-      <height>71</height>
+      <x>32</x>
+      <y>13</y>
+      <width>701</width>
+      <height>76</height>
      </rect>
     </property>
-    <layout class="QFormLayout" name="formLayout_5">
+    <layout class="QFormLayout" name="formLayout_3">
      <property name="verticalSpacing">
-      <number>15</number>
+      <number>18</number>
      </property>
      <item row="0" column="0">
       <layout class="QHBoxLayout" name="horizontalLayout_4">
@@ -246,6 +255,9 @@
        </property>
        <item>
         <widget class="QRadioButton" name="radioButton_VObject">
+         <property name="toolTip">
+          <string>Insert the path to the virtual object.</string>
+         </property>
          <property name="text">
           <string>Virtual Object : </string>
          </property>
@@ -277,6 +289,9 @@
        </property>
        <item>
         <widget class="QLabel" name="label_VObjectMag">
+         <property name="toolTip">
+          <string>Insert the magnification factor of the 3D image of the virtual phantom.</string>
+         </property>
          <property name="text">
           <string>Virtual Object Magnification :</string>
          </property>
@@ -307,7 +322,7 @@
    <property name="geometry">
     <rect>
      <x>40</x>
-     <y>370</y>
+     <y>380</y>
      <width>811</width>
      <height>151</height>
     </rect>
@@ -321,15 +336,15 @@
    <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
-      <x>30</x>
-      <y>19</y>
-      <width>317</width>
-      <height>113</height>
+      <x>32</x>
+      <y>23</y>
+      <width>327</width>
+      <height>106</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_2">
      <property name="spacing">
-      <number>15</number>
+      <number>10</number>
      </property>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_11">
@@ -338,6 +353,9 @@
        </property>
        <item>
         <widget class="QLabel" name="label_gritMaterial">
+         <property name="toolTip">
+          <string>Grit material</string>
+         </property>
          <property name="text">
           <string>Grit Material :</string>
          </property>
@@ -362,6 +380,9 @@
        </property>
        <item>
         <widget class="QLabel" name="label_gritSize">
+         <property name="toolTip">
+          <string>Average grit size inside the diffuser</string>
+         </property>
          <property name="text">
           <string>Average Grit Size (mm) :</string>
          </property>
@@ -386,6 +407,9 @@
        </property>
        <item>
         <widget class="QLabel" name="label_baseMaterial">
+         <property name="toolTip">
+          <string>Base material of the diffuser</string>
+         </property>
          <property name="text">
           <string>Base Material :</string>
          </property>
@@ -408,15 +432,15 @@
    <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
-      <x>396</x>
-      <y>20</y>
-      <width>383</width>
-      <height>71</height>
+      <x>391</x>
+      <y>24</y>
+      <width>394</width>
+      <height>70</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_3">
      <property name="spacing">
-      <number>15</number>
+      <number>10</number>
      </property>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout_13">
@@ -425,6 +449,9 @@
        </property>
        <item>
         <widget class="QLabel" name="label_diffThickness">
+         <property name="toolTip">
+          <string>Total thickness of the diffuser</string>
+         </property>
          <property name="text">
           <string>Diffuser Thickness (mm) :</string>
          </property>
@@ -449,6 +476,9 @@
        </property>
        <item>
         <widget class="QLabel" name="label_gritDensity">
+         <property name="toolTip">
+          <string>Select a qualitative value for the volume desnsity percentage of grits distribution inside the diffuser.</string>
+         </property>
          <property name="text">
           <string>Grit Distribution Density:</string>
          </property>
@@ -487,23 +517,26 @@
    <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
-      <x>30</x>
-      <y>20</y>
-      <width>754</width>
-      <height>29</height>
+      <x>31</x>
+      <y>21</y>
+      <width>761</width>
+      <height>30</height>
      </rect>
     </property>
-    <layout class="QHBoxLayout" name="horizontalLayout_7">
-     <property name="spacing">
-      <number>30</number>
+    <layout class="QFormLayout" name="formLayout_4">
+     <property name="horizontalSpacing">
+      <number>9</number>
      </property>
-     <item>
+     <item row="0" column="0">
       <layout class="QHBoxLayout" name="horizontalLayout_9">
        <property name="spacing">
         <number>8</number>
        </property>
        <item>
         <widget class="QLabel" name="label_numMVSlices">
+         <property name="toolTip">
+          <string>Select a qualitative value for number of slices in MVS method.</string>
+         </property>
          <property name="text">
           <string>Number of Slices in MVS method :</string>
          </property>
@@ -521,7 +554,7 @@
        </item>
       </layout>
      </item>
-     <item>
+     <item row="0" column="1">
       <layout class="QHBoxLayout" name="horizontalLayout_10">
        <property name="spacing">
         <number>8</number>
@@ -562,7 +595,10 @@
    </property>
    <property name="font">
     <font>
-     <pointsize>14</pointsize>
+     <family>Ubuntu</family>
+     <pointsize>12</pointsize>
+     <italic>false</italic>
+     <bold>false</bold>
     </font>
    </property>
    <property name="text">
@@ -573,14 +609,17 @@
    <property name="geometry">
     <rect>
      <x>30</x>
-     <y>340</y>
+     <y>350</y>
      <width>80</width>
      <height>22</height>
     </rect>
    </property>
    <property name="font">
     <font>
-     <pointsize>14</pointsize>
+     <family>Ubuntu</family>
+     <pointsize>12</pointsize>
+     <italic>false</italic>
+     <bold>false</bold>
     </font>
    </property>
    <property name="text">

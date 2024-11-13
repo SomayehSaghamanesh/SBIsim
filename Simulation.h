@@ -8,6 +8,7 @@
 
 
 #include <QMainWindow>
+#include <cmath>
 
 // class ConeBeamSimulation; // forward declaration
 

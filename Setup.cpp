@@ -1,7 +1,9 @@
 #include "Setup.h"
+#include "qvalidator.h"
 #include "ui_Setup.h"
 
 #include <QMessageBox>
+#include <QFileDialog>
 
 Setup::Setup(QWidget *parent)
     : QWidget(parent)
@@ -11,7 +13,18 @@ Setup::Setup(QWidget *parent)
 
     ui->lineEdit_NumProj->setEnabled(false);
 
+    ui->lineEdit_NumProj->setValidator(new QIntValidator(1, 10000, this));
+    ui->lineEdit_SDD->setValidator(new QDoubleValidator(0, 1000000, 6, this));
+    ui->lineEdit_SOD->setValidator(new QDoubleValidator(0, 1000000, 6, this));
+    ui->lineEdit_SdD->setValidator(new QDoubleValidator(0, 1000000, 6, this));
+
+    connect( ui->lineEdit_NumProj, &QLineEdit::textEdited, this, &Setup::CheckNumProj);
+    connect( ui->lineEdit_SDD, &QLineEdit::textEdited, this, &Setup::CheckSDD);
+    connect( ui->lineEdit_SOD, &QLineEdit::textEdited, this, &Setup::CheckSOD);
+    connect( ui->lineEdit_SdD, &QLineEdit::textEdited, this, &Setup::CheckSdD);
+
     connect(ui->pushButton_Start, &QPushButton::clicked, this, &Setup::StartButtonClicked);
+
 }
 
 Setup::~Setup()
@@ -22,6 +35,9 @@ Setup::~Setup()
 void Setup::on_radioButton_Radiography_toggled(bool checked)
 {
     m_radioFlag = checked;
+    if (checked){
+        ui->lineEdit_NumProj->clear();
+    }
 }
 
 void Setup::on_radioButton_Tomography_toggled(bool checked)
@@ -56,7 +72,7 @@ void Setup::getDistances() // in [m]
 
     } else {
 
-        QMessageBox::warning(this, "ERROR", "please insert a valid source to object distance (mm).");
+        QMessageBox::warning(this, "ERROR", "please insert a non-zero source to object distance (mm).");
         return;
     }
     //
@@ -66,7 +82,7 @@ void Setup::getDistances() // in [m]
 
     } else {
 
-        QMessageBox::warning(this, "ERROR", "please insert a valid source to diffuser distance (mm).");
+        QMessageBox::warning(this, "ERROR", "please insert a non-zero source to diffuser distance (mm).");
         return;
     }
     //
@@ -76,24 +92,58 @@ void Setup::getDistances() // in [m]
 
     } else {
 
-        QMessageBox::warning(this, "ERROR", "please insert a valid source to detector distance (mm).");
+        QMessageBox::warning(this, "ERROR", "please insert a non-zero source to detector distance (mm).");
         return;
     }
 
 }
 
-// double Setup::getSourceToObjectDist()
-// {
-//     return (ui->lineEdit_SOD->text().toDouble());
-// }
+void Setup::on_pushButton_ImageDir_clicked()
+{
+    QString imageDir = QFileDialog::getExistingDirectory(this, tr("Select a directory"), QDir::homePath(), QFileDialog::ShowDirsOnly);
+    ui->lineEdit_imageDir->setText(imageDir);
+}
 
-// double Setup::getSourcetoDiffuserDist()
-// {
-//     return (ui->lineEdit_SdD->text().toDouble());
-// }
+QString Setup::getImageDir()
+{
+    QDir *im_dir = new QDir(ui->lineEdit_imageDir->text());
+    if ( (!(ui->lineEdit_imageDir->text().isEmpty()) && (im_dir->exists()))){
+        return (ui->lineEdit_imageDir->text());
+    } else {
+        return (QDir::homePath());
+    }
 
-// double Setup::getSourcetoDetectorDist()
-// {
-//     return (ui->lineEdit_SDD->text().toDouble());
-// }
+    delete im_dir;
+}
 
+void Setup::CheckNumProj()
+{
+    if (!(ui->lineEdit_NumProj->hasAcceptableInput())){
+        QMessageBox::warning(this, "ERROR", "Number of projections must be an integer between 1 and 10000.");
+        ui->lineEdit_NumProj->clear();
+    }
+}
+
+void Setup::CheckSDD()
+{
+    if (!(ui->lineEdit_SDD->hasAcceptableInput())) {
+        QMessageBox::warning(this, "ERROR", "Distance must be a double number between 0 and 1000000.");
+        ui->lineEdit_SDD->clear();
+    }
+}
+
+void Setup::CheckSOD()
+{
+    if (!(ui->lineEdit_SOD->hasAcceptableInput())) {
+        QMessageBox::warning(this, "ERROR", "Distance must be a double number between 0 and 1000000.");
+        ui->lineEdit_SOD->clear();
+    }
+}
+
+void Setup::CheckSdD()
+{
+    if (!(ui->lineEdit_SdD->hasAcceptableInput())) {
+        QMessageBox::warning(this, "ERROR", "Distance must be a double number between 0 and 1000000.");
+        ui->lineEdit_SdD->clear();
+    }
+}

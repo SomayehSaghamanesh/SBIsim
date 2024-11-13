@@ -1,5 +1,7 @@
 #include "Object.h"
 
+#include <QDebug>
+
 
 Object::Object(int numObjVoxelsZ, int numPixels, double pixelObj, DiffuserAndObject* diffuserAndObject)
     : m_numObjVoxelsZ(numObjVoxelsZ)
@@ -46,10 +48,10 @@ void Object::CreateSphere(std::vector<std::vector<std::vector<int>>>& object)
     int originInPlane = m_numPixels/2;
     int originZ = m_numObjVoxelsZ/2;
 
-    qDebug() << "sphere diam : " << (m_diffuserAndObject->getSphereDiameter());
-    qDebug() << "m_pixepObj inside Object : " << m_pixelObj;
-    qDebug() << "sphere radius index : " << r;
-    qDebug() << "sphere originInPlane : " << originInPlane;
+    qDebug() << "Sphere diameter: " << (m_diffuserAndObject->getSphereDiameter());
+    // qDebug() << "m_pixepObj inside Object : " << m_pixelObj;
+    qDebug() << "Sphere radius index : " << r;
+    qDebug() << "Sphere origin in x-y : " << originInPlane;
 
     for (int i = 0 ; i < m_numPixels ; i++)
     {

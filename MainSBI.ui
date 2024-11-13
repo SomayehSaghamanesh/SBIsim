@@ -29,6 +29,18 @@
    <iconset resource="Resources.qrc">
     <normaloff>:/Resources/img/SBIsim_icon.png</normaloff>:/Resources/img/SBIsim_icon.png</iconset>
   </property>
+  <property name="autoFillBackground">
+   <bool>true</bool>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">font: 14pt &quot;Ubuntu&quot;;
+
+
+</string>
+  </property>
+  <property name="animated">
+   <bool>false</bool>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -36,6 +48,23 @@
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>515</x>
+      <y>574</y>
+      <width>391</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">font: 255 10pt &quot;Ubuntu Thin&quot;;
+font-style: italic; </string>
+    </property>
+    <property name="text">
+     <string>Developed by Somayeh Saghamanesh (s.saghamanesh@gmail.com)</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -43,7 +72,7 @@
      <x>0</x>
      <y>0</y>
      <width>900</width>
-     <height>22</height>
+     <height>27</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuTools">
@@ -67,7 +96,20 @@
    <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QStatusBar" name="statusBar">
+   <property name="minimumSize">
+    <size>
+     <width>500</width>
+     <height>0</height>
+    </size>
+   </property>
+   <property name="mouseTracking">
+    <bool>true</bool>
+   </property>
+   <property name="sizeGripEnabled">
+    <bool>true</bool>
+   </property>
+  </widget>
   <action name="actionSimulation">
    <property name="text">
     <string>Simulation</string>

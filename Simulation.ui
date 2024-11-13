@@ -50,6 +50,9 @@
         <height>650</height>
        </size>
       </property>
+      <property name="styleSheet">
+       <string notr="true">font: 14pt &quot;Ubuntu&quot;;</string>
+      </property>
       <property name="currentIndex">
        <number>-1</number>
       </property>

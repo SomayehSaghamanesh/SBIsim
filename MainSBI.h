@@ -2,6 +2,8 @@
 #define MAINSBI_H
 
 #include <QMainWindow>
+#include <QPainter>
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -17,12 +19,17 @@ public:
     explicit MainSBI(QWidget *parent = nullptr);
     ~MainSBI();
 
+
 private slots:
     void on_actionSimulation_triggered();
-
     void on_actionExit_triggered();
 
 private:
+
     Ui::MainSBI *ui;
+
+    void paintEvent(QPaintEvent *event);
+
+    // void showEvent(QShowEvent *event);
 };
 #endif // MAINSBI_H

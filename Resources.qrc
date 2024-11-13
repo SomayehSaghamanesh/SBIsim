@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/Resources">
         <file>img/SBIsim_icon.png</file>
+        <file>img/SBIsim_cover.png</file>
     </qresource>
 </RCC>

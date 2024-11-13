@@ -13,6 +13,7 @@
 #include <QFile>
 #include <QFileDialog>
 #include <algorithm>
+#include <QButtonGroup>
 
 
 
@@ -28,6 +29,46 @@ DiffuserAndObject::DiffuserAndObject(QWidget *parent)
     ui->lineEdit_VObject->setEnabled(false);
     ui->lineEdit_vObjectMag->setEnabled(false);
     ui->pushButton_VObject->setEnabled(false);
+
+    ui->lineEdit_CDiameter->setValidator(new QDoubleValidator(0.0, 10000.0, 6, this));
+    ui->lineEdit_CHeight->setValidator(new QDoubleValidator(0, 10000, 6, this));
+    ui->lineEdit_SDiameter->setValidator(new QDoubleValidator(0, 10000, 6, this));
+    ui->lineEdit_vObjectMag->setValidator(new QDoubleValidator(1, 10000, 6, this));
+    ui->lineEdit_gritSize->setValidator(new QDoubleValidator(0, 1000, 6, this));
+    ui->lineEdit_diffThickness->setValidator(new QDoubleValidator(0, 1000, 6, this));
+    ui->lineEdit_NumInterp->setValidator(new QIntValidator(1, 1000, this));
+
+    connect( ui->lineEdit_CDiameter, &QLineEdit::textEdited, this, &DiffuserAndObject::CheckCylinderDiameter);
+    connect( ui->lineEdit_CHeight, &QLineEdit::textEdited, this, &DiffuserAndObject::CheckCylinderHeight);
+    connect( ui->lineEdit_SDiameter, &QLineEdit::textEdited, this, &::DiffuserAndObject::CheckSphereDiameter);
+    connect( ui->lineEdit_vObjectMag, &QLineEdit::textEdited, this, &DiffuserAndObject::CheckVirtualMag);
+    connect( ui->lineEdit_gritSize, &QLineEdit::textEdited, this, &DiffuserAndObject::CheckGritSize);
+    connect( ui->lineEdit_diffThickness, &QLineEdit::textEdited, this, &DiffuserAndObject::CheckDiffuserThickness);
+    connect( ui->lineEdit_NumInterp, &QLineEdit::textEdited, this, &DiffuserAndObject::CheckNumInterp);
+
+    // connect(ui->radioButton_VObject, &QRadioButton::toggled, [=](bool checked){
+    //     if (checked) {
+    //         ui->radioButton_Cylinder->setChecked(false);
+    //         ui->radioButton_Sphere->setChecked(false);
+    //     }
+    // });
+
+    // connect(ui->radioButton_Cylinder, &QRadioButton::toggled, [=](bool checked){
+    //     if (checked) {
+    //         ui->radioButton_VObject->setChecked(false);
+    //     }
+    // });
+
+    // connect(ui->radioButton_Sphere, &QRadioButton::toggled, [=](bool checked){
+    //     if (checked) {
+    //         ui->radioButton_VObject->setChecked(false);
+    //     }
+    // });
+
+    QButtonGroup *buttonGroup = new QButtonGroup(this);
+    buttonGroup->addButton(ui->radioButton_VObject);
+    buttonGroup->addButton(ui->radioButton_Sphere);
+    buttonGroup->addButton(ui->radioButton_Cylinder);
 
     MaterialsList();
     ui->comboBox_objectMaterial->addItems(m_materialsList);
@@ -50,12 +91,10 @@ void DiffuserAndObject::on_radioButton_Cylinder_toggled(bool checked)
     ui->lineEdit_CDiameter->setEnabled(checked);
     ui->lineEdit_CHeight->setEnabled(checked);
     m_cylinder = checked;
-    if (ui->radioButton_Cylinder->isChecked()){
+    if (checked){
         ui->lineEdit_SDiameter->clear();
         ui->lineEdit_VObject->clear();
         ui->lineEdit_vObjectMag->clear();
-        ui->lineEdit_SDiameter->setEnabled(false);
-        ui->radioButton_VObject->setChecked(false);
         ui->lineEdit_VObject->setEnabled(false);
         ui->lineEdit_vObjectMag->setEnabled(false);
         ui->pushButton_VObject->setEnabled(false);
@@ -67,14 +106,11 @@ void DiffuserAndObject::on_radioButton_Sphere_toggled(bool checked)
 {
     ui->lineEdit_SDiameter->setEnabled(checked);
     m_sphere = checked;
-    if (ui->radioButton_Sphere->isChecked()){
+    if (checked){
         ui->lineEdit_CDiameter->clear();
         ui->lineEdit_CHeight->clear();
         ui->lineEdit_VObject->clear();
         ui->lineEdit_vObjectMag->clear();
-        ui->lineEdit_CDiameter->setEnabled(false);
-        ui->lineEdit_CHeight->setEnabled(false);
-        ui->radioButton_VObject->setChecked(false);
         ui->lineEdit_VObject->setEnabled(false);
         ui->lineEdit_vObjectMag->setEnabled(false);
         ui->pushButton_VObject->setEnabled(false);
@@ -87,17 +123,18 @@ void DiffuserAndObject::on_radioButton_VObject_toggled(bool checked)
     ui->pushButton_VObject->setEnabled(checked);
     ui->lineEdit_vObjectMag->setEnabled(checked);
     m_virtualObject = checked;
-    if (ui->radioButton_VObject->isChecked()){
+    if (checked){
         ui->lineEdit_CDiameter->clear();
         ui->lineEdit_CHeight->clear();
         ui->lineEdit_SDiameter->clear();
         ui->lineEdit_CDiameter->setEnabled(false);
         ui->lineEdit_CHeight->setEnabled(false);
         ui->lineEdit_SDiameter->setEnabled(false);
-        ui->radioButton_Sphere->setChecked(false);
-        ui->radioButton_Cylinder->setChecked(false);
-        // on_radioButton_Sphere_toggled(false);
-        // on_radioButton_Cylinder_toggled(false);
+    } else {
+        ui->lineEdit_VObject->clear();
+        ui->lineEdit_vObjectMag->clear();
+        ui->lineEdit_VObject->setEnabled(false);
+        ui->lineEdit_vObjectMag->setEnabled(false);
     }
 }
 
@@ -128,16 +165,28 @@ void DiffuserAndObject::on_pushButton_VObject_clicked()
 
 double DiffuserAndObject::getCylinderDiameter()
 {
+    if ( (ui->lineEdit_CDiameter->text().isEmpty()) || ((ui->lineEdit_CDiameter->text().toDouble()) == 0) ) {
+        QMessageBox::warning(this, "ERROR", "Please insert a non-zero cylinder's diameter.");
+    }
+
     return (0.001*(ui->lineEdit_CDiameter->text().toDouble())); // [m]
 }
 
 double DiffuserAndObject::getCylinderHeight()
 {
+    if ( (ui->lineEdit_CHeight->text().isEmpty()) || ((ui->lineEdit_CHeight->text().toDouble()) == 0) ) {
+        QMessageBox::warning(this, "ERROR", "Please insert a non-zero cylinder's height.");
+    }
+
     return (0.001*(ui->lineEdit_CHeight->text().toDouble())); // [m]
 }
 
 double DiffuserAndObject::getSphereDiameter()
 {
+    if ( (ui->lineEdit_SDiameter->text().isEmpty()) || ((ui->lineEdit_SDiameter->text().toDouble()) == 0) ) {
+        QMessageBox::warning(this, "ERROR", "Please insert a non-zero sphere's diameter.");
+    }
+
     return (0.001*(ui->lineEdit_SDiameter->text().toDouble())); // [m]
 }
 
@@ -360,4 +409,60 @@ double DiffuserAndObject::getDiffuserThickness()
 QString DiffuserAndObject::getGritDensity()
 {
     return (ui->comboBox_gritDensity->currentText());
+}
+
+void DiffuserAndObject::CheckCylinderDiameter()
+{
+    if ( (!(ui->lineEdit_CDiameter->hasAcceptableInput()))){
+        QMessageBox::warning(this, "ERROR", "Please insert a double number between 0 and 10000.");
+        ui->lineEdit_CDiameter->clear();
+    }
+}
+
+void DiffuserAndObject::CheckCylinderHeight()
+{
+    if (!(ui->lineEdit_CHeight->hasAcceptableInput())) {
+        QMessageBox::warning(this, "ERROR", "Please insert a double number between 0 and 10000.");
+        ui->lineEdit_CHeight->clear();
+    }
+}
+
+void DiffuserAndObject::CheckSphereDiameter()
+{
+    if (!(ui->lineEdit_SDiameter->hasAcceptableInput())) {
+        QMessageBox::warning(this, "ERROR", "Please insert a double number between 0 and 10000.");
+        ui->lineEdit_SDiameter->clear();
+    }
+}
+
+void DiffuserAndObject::CheckVirtualMag()
+{
+    if (!(ui->lineEdit_vObjectMag->hasAcceptableInput())) {
+        QMessageBox::warning(this, "ERROR", "Please insert a double number between 0 and 10000.");
+        ui->lineEdit_vObjectMag->clear();
+    }
+}
+
+void DiffuserAndObject::CheckGritSize()
+{
+    if (!(ui->lineEdit_gritSize->hasAcceptableInput())) {
+        QMessageBox::warning(this, "ERROR", "Please insert a double number between 0 and 1000.");
+        ui->lineEdit_gritSize->clear();
+    }
+}
+
+void DiffuserAndObject::CheckDiffuserThickness()
+{
+    if (!(ui->lineEdit_diffThickness->hasAcceptableInput())) {
+        QMessageBox::warning(this, "ERROR", "Please insert a double number between 0 and 1000.");
+        ui->lineEdit_diffThickness->clear();
+    }
+}
+
+void DiffuserAndObject::CheckNumInterp()
+{
+    if (!(ui->lineEdit_NumInterp->hasAcceptableInput())) {
+        QMessageBox::warning(this, "ERROR", "Please insert an integer between 1 and 1000.");
+        ui->lineEdit_NumInterp->clear();
+    }
 }

@@ -46,6 +46,15 @@ class DiffuserAndObject : public QWidget
         void on_radioButton_VObject_toggled(bool checked);
         void on_pushButton_VObject_clicked();
 
+        void CheckCylinderDiameter();
+        void CheckCylinderHeight();
+        void CheckSphereDiameter();
+        void CheckVirtualMag();
+        void CheckGritSize();
+        void CheckDiffuserThickness();
+        void CheckNumInterp();
+
+
 
     private:
 

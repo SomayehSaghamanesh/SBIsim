@@ -35,9 +35,9 @@ Simulation::Simulation(QWidget *parent)
     tab_setup = new Setup();
     mat = new Materials();
 
-    ui->SimulationTabs->addTab(tab_source_detector, QString("Source and Detector").arg(0));
-    ui->SimulationTabs->addTab(tab_diffuser_object, QString("Diffuser and Object").arg(1));
-    ui->SimulationTabs->addTab(tab_setup, QString("SBI Setup").arg(2));
+    ui->SimulationTabs->addTab(tab_source_detector, QString("Source and Detector"));
+    ui->SimulationTabs->addTab(tab_diffuser_object, QString("Diffuser and Object"));
+    ui->SimulationTabs->addTab(tab_setup, QString("SBI Setup"));
     ui->SimulationTabs->setCurrentIndex(0);
 
     connect(tab_setup, &Setup::StartButtonClicked, this, &Simulation::InitiateSimulation);
@@ -182,25 +182,25 @@ void Simulation::setParams()
     {
         qDebug() << "physlist : d = " << m_physList[i].density << ", Z/A = " << m_physList[i].Z_A << ", name = " << m_physList[i].name;
     }
-    qDebug() << "pixelSize : " << m_pixelSize;
-    qDebug() << "numPixels : " << m_numPixels;
-    qDebug() << "obj-thickness : " << m_objThickness;
-    qDebug() << "numVoxelsInZObj : " << m_numObjVoxelsZ;
-    qDebug() << "numMVSlices_obj : " << m_numMVSlicesObj;
-    qDebug() << "diff-thickness : " << m_diffThickness;
-    qDebug() << "m_numMVSlicesDiff : " << m_numMVSlicesDiff;
-    qDebug() << "m_numDiffVoxelsZ : " << m_numDiffVoxelsZ;
-    qDebug() << "numInterp : " << m_numInterp;
-    qDebug() << "numProj : " << m_numProj;
-    qDebug() << "M_obj : " << m_M_obj;
-    qDebug() << "M_diff : " << m_M_diff;
-    qDebug() << "fM_obj : " << m_fM_obj;
-    qDebug() << "fM_diff : " << m_fM_diff;
+    qDebug() << "Pixel size : " << m_pixelSize;
+    qDebug() << "Number of pixels : " << m_numPixels;
+    qDebug() << "Object thickness : " << m_objThickness;
+    qDebug() << "Number of depth voxels in the object : " << m_numObjVoxelsZ;
+    qDebug() << "Number of slices in the object : " << m_numMVSlicesObj;
+    qDebug() << "Diffuser thickness : " << m_diffThickness;
+    qDebug() << "number of slices in the diffuser : " << m_numMVSlicesDiff;
+    qDebug() << "Number of depth voxels in the diffuser : " << m_numDiffVoxelsZ;
+    qDebug() << "Number of Interpolations : " << m_numInterp;
+    qDebug() << "Number of projections : " << m_numProj;
+    qDebug() << "Magnification factors of the object : " << m_M_obj;
+    qDebug() << "Magnification factors of the diffuser : " << m_M_diff;
+    qDebug() << "Fresnel magnification factors of the object: " << m_fM_obj;
+    qDebug() << "Fresnel magnification factors of the diffuser : " << m_fM_diff;
 }
 
 void Simulation::WriteToImage2D(const std::vector<std::vector<float>>& image, const std::string& image_name, const int& indx)
 {
-    std::string output_image = image_name + "_" + std::to_string(indx+1) + ".tif";
+    std::string output_image = (tab_setup->getImageDir()).toStdString() + "/" + image_name + "_" + std::to_string(indx+1) + ".tif";
 
     size_t sizeX = image.size();
     size_t sizeY = image[0].size();
@@ -212,7 +212,7 @@ void Simulation::WriteToImage2D(const std::vector<std::vector<float>>& image, co
 
 void Simulation::WriteToImage3D(const std::vector<std::vector<std::vector<float>>>& image, const std::string& image_name)
 {
-    std::string output_image = image_name + ".nii";
+    std::string output_image = (tab_setup->getImageDir()).toStdString() + "/" + image_name + ".tif";
 
     size_t sizeX = image.size();
     size_t sizeY = image[0].size();
@@ -577,11 +577,10 @@ void Simulation::PropagateInMaterial(std::vector<std::vector<double>>& I, std::v
                 }
             }
         }
-        qDebug() << "coneBeamSliceThickness=" << coneBeamSliceThickness << "; coneBeamSliceThickness2=" << coneBeamSliceThickness2;
+        // qDebug() << "coneBeamSliceThickness=" << coneBeamSliceThickness << "; coneBeamSliceThickness2=" << coneBeamSliceThickness2;
     }
 
 }
-
 
 void Simulation::PropagateInFreeSpace(std::vector<std::vector<double>>& I, std::vector<std::vector<double>>& phi, const double& thickness1, const double& dist1, const double& dist2,
                                       const double& mag2, const double& mag1, const size_t& energyIndx, const bool isLastPropagation)
@@ -640,6 +639,21 @@ void Simulation::PropagateInFreeSpace(std::vector<std::vector<double>>& I, std::
 
 void Simulation::ConeBeamSimulation()
 {
+    qDebug() << "=================================  SBIsim (v1.0)  ===========================";
+    qDebug() << "#  A software for the simulation of X-ray phase-contrast and dark-field     #";
+    qDebug() << "#  imaging setups in speckle-based imaging (SBI) and propagation-based      #";
+    qDebug() << "#  imaging (PBI) methods. For more information, please read documentation   #";
+    qDebug() << "#  on github or software or refer to https://doi.org/10.1364/OE.444562.     #";
+    qDebug() << "#  Author: Somayeh Saghamanesh (s.saghamanesh@gmail.com)                    #";
+    qDebug() << "=============================================================================\n";
+    qDebug() << "================================  Disclaimer  ================================";
+    qDebug() << "#  This software is provided 'as is' without any warranties or guarantees of #";
+    qDebug() << "#  any kind, either express or implied, including but not limited to the     #";
+    qDebug() << "#  accuracy, reliability, or fitness for a particular purpose. The author    #";
+    qDebug() << "#  assumes no responsibility for any errors, damages, or unintended          #";
+    qDebug() << "#  consequences resulting from the use or application of this software.      #";
+    qDebug() << "==============================================================================";
+
     setParams(); // set all parameters
 
     // Images
@@ -672,12 +686,14 @@ void Simulation::ConeBeamSimulation()
     std::vector<Materials::refractiveIndex> n_base = mat->RefractiveIndex(m_energyVector, m_physList[2].formula, m_physList[2].density);
     std::unique_ptr<Diffuser> diffuser = std::make_unique<Diffuser>(m_numPixels, m_numDiffVoxelsZ, m_pixelSize/m_M_diff[0], tab_diffuser_object);
     diffuser->CreateDiffuser(diff); // create diffuser
-    qDebug() << "numGrits=" << diffuser->m_numGrits;
+    qDebug() << "Number of Grits : " << diffuser->m_numGrits;
 
 
     // ********************************************
     // ****  Simulate image over projections  *****
     // ********************************************
+    qDebug() << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
+    qDebug() << "Starting the simulation ... \n";
     for (int proj = 0 ; proj < m_numProj ; proj++)
     {
         qDebug() << "========== proj = " << proj+1 << " ==========\n";
@@ -754,7 +770,7 @@ void Simulation::ConeBeamSimulation()
                     }
                 }
             }
-            qDebug() << "bg=" << bg << ", fg=" << fg << "\n";
+            // qDebug() << "bg=" << bg << ", fg=" << fg << "\n";
 
             bg = 0;
             fg = 0;
@@ -771,7 +787,7 @@ void Simulation::ConeBeamSimulation()
 
 
     // save background (bg) and foreground (fg) images to files
-    qDebug() << "writing images to files ... :";
+    qDebug() << "writing images to files ... :\n";
 
     // there is no rotation/tomo for bg images
     std::string output_image_I_bg = "I_bg";
@@ -785,6 +801,9 @@ void Simulation::ConeBeamSimulation()
     std::string output_image_phi_fg = "phi_fg";
     WriteToImage3D(I_fg, output_image_I_fg);
     WriteToImage3D(phi_fg, output_image_phi_fg);
+
+    qDebug() << "The simulation is finished.\n";
+    qDebug() << "++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++";
 
     // std::string output_image_obj = "object.nii";
     // for (size_t i = 0 ; i < obj.size() ; i++){

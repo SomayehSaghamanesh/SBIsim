@@ -25,6 +25,9 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
+  <property name="styleSheet">
+   <string notr="true">font: 12pt &quot;Ubuntu&quot;;</string>
+  </property>
   <widget class="QLabel" name="label_XSource">
    <property name="geometry">
     <rect>
@@ -36,7 +39,10 @@
    </property>
    <property name="font">
     <font>
-     <pointsize>14</pointsize>
+     <family>Ubuntu</family>
+     <pointsize>12</pointsize>
+     <italic>false</italic>
+     <bold>false</bold>
     </font>
    </property>
    <property name="text">
@@ -54,7 +60,10 @@
    </property>
    <property name="font">
     <font>
-     <pointsize>14</pointsize>
+     <family>Ubuntu</family>
+     <pointsize>12</pointsize>
+     <italic>false</italic>
+     <bold>false</bold>
     </font>
    </property>
    <property name="text">
@@ -65,7 +74,7 @@
    <property name="geometry">
     <rect>
      <x>40</x>
-     <y>210</y>
+     <y>220</y>
      <width>821</width>
      <height>111</height>
     </rect>
@@ -82,7 +91,7 @@
    <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
-      <x>25</x>
+      <x>29</x>
       <y>20</y>
       <width>771</width>
       <height>73</height>
@@ -206,7 +215,7 @@
      <x>40</x>
      <y>90</y>
      <width>821</width>
-     <height>101</height>
+     <height>111</height>
     </rect>
    </property>
    <property name="frameShape">
@@ -218,10 +227,10 @@
    <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
-      <x>20</x>
-      <y>20</y>
-      <width>121</width>
-      <height>63</height>
+      <x>30</x>
+      <y>24</y>
+      <width>127</width>
+      <height>65</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout">
@@ -244,13 +253,13 @@
      </item>
     </layout>
    </widget>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
-      <x>219</x>
-      <y>16</y>
+      <x>222</x>
+      <y>23</y>
       <width>304</width>
-      <height>27</height>
+      <height>28</height>
      </rect>
     </property>
     <layout class="QHBoxLayout" name="horizontalLayout_7">
@@ -288,10 +297,10 @@
    <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
-      <x>24</x>
+      <x>30</x>
       <y>20</y>
-      <width>263</width>
-      <height>71</height>
+      <width>271</width>
+      <height>73</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -354,10 +363,10 @@
    <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
-      <x>369</x>
+      <x>370</x>
       <y>19</y>
-      <width>390</width>
-      <height>71</height>
+      <width>400</width>
+      <height>73</height>
      </rect>
     </property>
     <layout class="QVBoxLayout" name="verticalLayout_5">

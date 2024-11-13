@@ -2,6 +2,8 @@
 #define SOURCEANDDETECTOR_H
 
 #include <QWidget>
+#include <QLineEdit>
+#include <cmath>
 
 namespace Ui {
 class SourceAndDetector;
@@ -37,8 +39,6 @@ public:
 
     std::vector<double> m_waveNumber();
 
-public slots:
-
 
 private slots:
 
@@ -51,6 +51,19 @@ private slots:
     void on_radioButton_Monochrom_toggled(bool checked);
 
     void on_radioButton_Polychrom_toggled(bool checked);
+
+    void CheckOpticalMag();
+
+    void CheckXEnergy();
+
+    void CheckPixelSize();
+
+    void CheckOFOV();
+
+    void CheckDetectorThickness();
+
+    // void CheckValues(QLineEdit *lineEdit);
+
 
 
 

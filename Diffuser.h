@@ -2,6 +2,8 @@
 #define DIFFUSER_H
 
 #include "DiffuserAndObject.h"
+#include <cmath>
+#include <QDebug>
 
 class Diffuser
 {

@@ -2,6 +2,7 @@
 #define OBJECT_H
 
 #include "DiffuserAndObject.h"
+#include <cmath>
 
 class Object
 {

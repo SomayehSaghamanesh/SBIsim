@@ -6,6 +6,9 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
+    QString platformPluginPath = QCoreApplication::applicationDirPath() + "/platforms";
+    QCoreApplication::addLibraryPath(platformPluginPath);
+
     MainSBI w;
     w.show();
 

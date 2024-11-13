@@ -28,7 +28,8 @@ public :
         std::vector<refractiveIndex> n;
 
         // Load the shared library
-        void* handle = dlopen("/home/somayeh/xraylib-master/install/lib/libxrl.so.11", RTLD_LAZY);
+        // void* handle = dlopen("/home/somayeh/xraylib-master/install/lib/libxrl.so.11", RTLD_LAZY);
+        void* handle = dlopen("libxrl.so.11", RTLD_LAZY);
         if (!handle) {
             qDebug() << "Cannot open the shared library ; "<< dlerror() << "\n";
             exit(EXIT_FAILURE);

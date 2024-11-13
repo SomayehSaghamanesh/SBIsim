@@ -64,10 +64,10 @@ void Diffuser::DistributeGrits(std::vector<int>& cx, std::vector<int>& cy, std::
     int maxGritRadiusIndx = maxGritRadius/m_pixelDiff;
     maxGritRadiusIndx = std::min(maxGritRadiusIndx, m_numDiffVoxelsZ);
 
-    qDebug() << "meanGritRadius : " << meanGritRadius;
-    qDebug() << "stdDev : " << stdDev;
-    qDebug() << "maxGritRadius : " << maxGritRadius;
-    qDebug() << "maxGritRadiusIndx : " << maxGritRadiusIndx;
+    qDebug() << "Mean radius of the grits : " << meanGritRadius;
+    qDebug() << "Radius stdDev of the grits  : " << stdDev;
+    qDebug() << "Maximum grit radius : " << maxGritRadius;
+    qDebug() << "Maximum grit radius index : " << maxGritRadiusIndx;
 
     std::random_device rd;
     std::mt19937 gen(rd());
