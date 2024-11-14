@@ -12,12 +12,14 @@ Below options are available in version 1.0:
 # How to Run
 The software doesn't need any installation. Download only the SBIsim-1.0 file (only for Linux). 
 Then follow below steps:
-1- In linux, open the terminal (ctrl+shift+T), then write:
+1- In linux, open the terminal (ctrl+shift+T), then:
 2- $ cd /path/to/your_downloaded_file
 3- $ sudo chmod +x SBIsim-1.0
 4- $ ./SBIsim-1.0
-above will run the software as well as show some verboses inside the terminal while running the software
+above will run the software as well as show some verboses inside the terminal while running the software.
 
-** As an alternative, you can just skip step 4 and click on the file (SBIsim-1.0), if you already have 
-FUSE and AppImageLauncher installed on your linux. Those utilities basically make SBIsim-1.0 as a usual application 
-installed on (and integrated in) your system where you can call it from the applications list and run it by one click.
+** As an alternative, you can just skip step 4 and click on the application file (SBIsim-1.0), if you already have 
+FUSE and AppImageLauncher installed on your linux. Those utilities basically make SBIsim-1.0 as an
+usual application installed on (and integrated in) your linux system, where you can call it from the applications
+list and run it by one click. However, no verbose will be shown by this way and the user will not be informed
+when the simulation is finished. In next versions, a status bar will be added for the processing.  
